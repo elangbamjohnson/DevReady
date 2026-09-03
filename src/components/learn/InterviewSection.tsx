@@ -11,10 +11,12 @@ const relevanceConfig = {
 
 interface InterviewSectionProps {
   block: InterviewBlock;
+  topicId?: string;
+  category?: string;
   className?: string;
 }
 
-export function InterviewSection({ block, className }: InterviewSectionProps) {
+export function InterviewSection({ block, topicId, category, className }: InterviewSectionProps) {
   const { color, bg, border, label } = relevanceConfig[block.relevance];
 
   return (
@@ -47,7 +49,13 @@ export function InterviewSection({ block, className }: InterviewSectionProps) {
 
       <div className="mt-4 pt-4 border-t border-current/10">
         <Link
-          href="/interview"
+          href={
+            topicId
+              ? `/interview/configure?topicId=${topicId}`
+              : category
+              ? `/interview/configure?category=${category}`
+              : '/interview'
+          }
           className={cn(
             'inline-flex items-center gap-1.5 text-xs font-medium transition-colors hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded',
             color

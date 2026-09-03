@@ -3,10 +3,31 @@
 
 'use client';
 
+import { useSyncExternalStore } from 'react';
 import Link from 'next/link';
-import { Bookmark, BarChart2, Shield, Clock } from 'lucide-react';
+import { Bookmark, BarChart2, Shield, Clock, ArrowRight, Play } from 'lucide-react';
+import {
+  interviewStore,
+  subscribeToInterviewStore,
+  getServerNull,
+  getServerEmptySessions,
+} from '@/lib/interview/interviewStore';
 
 export default function PracticeSessionCard() {
+  const activeSession = useSyncExternalStore(
+    subscribeToInterviewStore,
+    () => interviewStore.getActiveSession(),
+    getServerNull
+  );
+
+  const history = useSyncExternalStore(
+    subscribeToInterviewStore,
+    () => interviewStore.getHistory(),
+    getServerEmptySessions
+  );
+
+  const lastCompletedSession = history.find((s) => s.status === 'completed') || null;
+
   return (
     <div className="bg-[#141414] border border-neutral-800 rounded-2xl p-6 flex flex-col h-full justify-between shadow-lg shadow-black/20">
       {/* Header Overline */}
@@ -20,10 +41,14 @@ export default function PracticeSessionCard() {
 
         {/* Card Title & Description */}
         <h3 className="text-base font-semibold text-white mb-1">
-          Senior iOS Session
+          {activeSession ? 'In-Progress Interview' : 'Senior iOS Practice Track'}
         </h3>
         <p className="text-sm text-neutral-400 leading-relaxed">
-          Mixed topics — Architecture, Concurrency, Memory
+          {activeSession
+            ? `Resume question ${activeSession.currentIndex + 1} of ${activeSession.questionIds.length}`
+            : lastCompletedSession?.result
+            ? `Last evaluated score: ${lastCompletedSession.result.overallScore}% (${lastCompletedSession.difficulty})`
+            : 'Curated topics — Concurrency, Architecture, Memory & System Design'}
         </p>
       </div>
 
@@ -32,14 +57,18 @@ export default function PracticeSessionCard() {
         {/* Stat 1: Questions */}
         <div className="flex flex-col items-center justify-center">
           <BarChart2 className="w-4 h-4 text-neutral-400 mb-1" strokeWidth={1.75} aria-hidden="true" />
-          <span className="text-sm font-bold text-neutral-200">20</span>
+          <span className="text-sm font-bold text-neutral-200">
+            {activeSession ? activeSession.questionIds.length : 20}
+          </span>
           <span className="text-[10px] text-neutral-500 uppercase tracking-wider mt-0.5">Questions</span>
         </div>
 
         {/* Stat 2: Level */}
         <div className="flex flex-col items-center justify-center border-x border-neutral-800">
           <Shield className="w-4 h-4 text-neutral-400 mb-1" strokeWidth={1.75} aria-hidden="true" />
-          <span className="text-sm font-bold text-neutral-200">Senior</span>
+          <span className="text-sm font-bold text-neutral-200 capitalize">
+            {activeSession ? activeSession.difficulty : 'Senior'}
+          </span>
           <span className="text-[10px] text-neutral-500 uppercase tracking-wider mt-0.5">Level</span>
         </div>
 
@@ -52,14 +81,25 @@ export default function PracticeSessionCard() {
       </div>
 
       {/* Bottom Action Button */}
-      <Link href="/interview" className="block mt-auto pt-2">
-        <button
-          type="button"
-          className="w-full bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors cursor-pointer shadow-sm shadow-violet-950/30"
-        >
-          Start Practice
-        </button>
-      </Link>
+      <div className="pt-2 mt-auto">
+        {activeSession ? (
+          <Link
+            href={`/interview/session/${activeSession.id}`}
+            className="w-full inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors cursor-pointer shadow-sm shadow-violet-950/30"
+          >
+            <Play className="w-4 h-4 fill-current" />
+            Resume Session
+          </Link>
+        ) : (
+          <Link
+            href="/interview"
+            className="w-full inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white text-sm font-medium py-2.5 px-4 rounded-xl transition-colors cursor-pointer shadow-sm shadow-violet-950/30"
+          >
+            Start Practice
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        )}
+      </div>
     </div>
   );
 }

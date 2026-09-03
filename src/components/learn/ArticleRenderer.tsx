@@ -45,9 +45,11 @@ function InlineText({ text }: { text: string }) {
 
 interface ArticleRendererProps {
   blocks: ContentBlock[];
+  topicId?: string;
+  category?: string;
 }
 
-export function ArticleRenderer({ blocks }: ArticleRendererProps) {
+export function ArticleRenderer({ blocks, topicId, category }: ArticleRendererProps) {
   return (
     <div className="article-content">
       {blocks.map((block) => {
@@ -133,7 +135,7 @@ export function ArticleRenderer({ blocks }: ArticleRendererProps) {
             return <ComparisonTable key={block.id} block={block} />;
 
           case 'interview':
-            return <InterviewSection key={block.id} block={block} />;
+            return <InterviewSection key={block.id} block={block} topicId={topicId} category={category} />;
 
           case 'relatedTopics': {
             const topics = block.topicIds

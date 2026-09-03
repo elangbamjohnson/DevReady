@@ -399,3 +399,6 @@ export interface VersionInfo {
   version: string;
   status: VersionStatus;
 }
+
+// ─── Phase 3: Interview Engine Models ─────────────────────────────────────────
+export * from './interview';
