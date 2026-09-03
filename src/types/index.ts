@@ -2,20 +2,106 @@
 
 export type TopicCategory =
   | 'swift'
+  | 'objc'
+  | 'concurrency'
+  | 'combine'
   | 'swiftui'
   | 'uikit'
-  | 'concurrency'
-  | 'architecture'
+  | 'foundation'
   | 'networking'
-  | 'memory'
-  | 'objc'
+  | 'persistence'
+  | 'architecture'
+  | 'app-lifecycle'
+  | 'background'
+  | 'notifications'
+  | 'location'
+  | 'media'
+  | 'security'
+  | 'testing'
+  | 'debugging'
+  | 'performance'
+  | 'accessibility'
+  | 'apple-frameworks'
+  | 'widgets'
+  | 'storekit'
+  | 'cicd'
   | 'system-design'
-  | 'debugging';
+  | 'production'
+  | 'coreml'
+  // Legacy aliases retained for backwards compatibility
+  | 'memory';
 
-export type DifficultyLevel = 'junior' | 'mid' | 'senior' | 'staff';
+export type DifficultyLevel =
+  | 'junior'
+  | 'mid'
+  | 'senior'
+  | 'staff'
+  | 'foundational'
+  | 'intermediate'
+  | 'advanced'
+  | 'expert';
+
+export type CurriculumDifficulty = 'foundational' | 'intermediate' | 'advanced' | 'expert';
+export type CurriculumStatus = 'available' | 'coming-soon' | 'planned' | 'deprecated' | 'needs-review';
+export type CurriculumPriority = 'P0' | 'P1' | 'P2' | 'P3';
+
 export type CompletionStatus = 'not-started' | 'in-progress' | 'completed';
 export type InterviewRelevance = 'low' | 'medium' | 'high';
 export type VersionStatus = 'current' | 'beta' | 'updated' | 'deprecated' | 'introduced';
+
+// ─── Curriculum Hierarchy (Domain -> Module -> Topic -> Concept) ─────────────
+
+export interface CurriculumConcept {
+  id: string;
+  title: string;
+  description?: string;
+}
+
+export interface CurriculumTopic {
+  id: string;
+  slug: string;
+  title: string;
+  domainId: TopicCategory;
+  moduleId: string;
+  difficulty: DifficultyLevel;
+  status: CurriculumStatus;
+  priority: CurriculumPriority;
+  description: string;
+  estimatedMinutes: number;
+  questionCount?: number;
+  defaultProgress?: number;
+  version?: VersionMetadata;
+  interviewRelevance?: InterviewRelevance;
+  tags: string[];
+  aliases?: string[];
+  prerequisites?: string[];
+  relatedTopics?: string[];
+  nextTopic?: string;
+  previousTopic?: string;
+  concepts?: CurriculumConcept[];
+}
+
+export interface CurriculumModule {
+  id: string;
+  domainId: TopicCategory;
+  title: string;
+  description: string;
+  difficulty?: DifficultyLevel;
+  priority?: CurriculumPriority;
+  status?: CurriculumStatus;
+  topics: CurriculumTopic[];
+}
+
+export interface CurriculumDomain {
+  id: TopicCategory;
+  number: string; // e.g. "01", "02", ... "27"
+  title: string;
+  shortTitle: string;
+  description: string;
+  icon: string;
+  colorBadgeClass: string;
+  modules: CurriculumModule[];
+}
 
 // ─── Version Metadata ─────────────────────────────────────────────────────────
 

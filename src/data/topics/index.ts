@@ -56,7 +56,7 @@ if (process.env.NODE_ENV === 'development') {
   });
 }
 
-// ─── Category Metadata ────────────────────────────────────────────────────────
+import { CURRICULUM_DOMAINS } from '@/data/curriculum';
 
 export interface CategoryMeta {
   slug: string;
@@ -67,75 +67,20 @@ export interface CategoryMeta {
 }
 
 export const categoryMeta: CategoryMeta[] = [
-  {
-    slug: 'swift',
-    category: 'swift',
-    label: 'Swift',
-    description: 'Master the Swift language from core fundamentals to advanced language features used in modern iOS development.',
-    icon: 'S',
-  },
-  {
-    slug: 'swiftui',
-    category: 'swiftui',
-    label: 'SwiftUI',
-    description: 'Build declarative, reactive UIs with SwiftUI — state management, navigation, layouts, and animations.',
-    icon: 'SU',
-  },
-  {
-    slug: 'uikit',
-    category: 'uikit',
-    label: 'UIKit',
-    description: 'Deep-dive into UIKit\'s view controller lifecycle, layout system, table views, and collection views.',
-    icon: 'UK',
-  },
-  {
-    slug: 'concurrency',
-    category: 'concurrency',
-    label: 'Concurrency',
-    description: 'Understand Swift Concurrency: async/await, actors, task groups, Sendable, and structured concurrency.',
-    icon: 'Co',
-  },
-  {
-    slug: 'architecture',
-    category: 'architecture',
-    label: 'Architecture',
-    description: 'Apply MVVM, VIPER, Clean Architecture, dependency injection, and modular design to scalable iOS apps.',
-    icon: 'Ar',
-  },
-  {
-    slug: 'networking',
-    category: 'networking',
-    label: 'Networking',
-    description: 'Build reliable networking layers with URLSession, Codable, error handling, and caching strategies.',
-    icon: 'Ne',
-  },
+  ...CURRICULUM_DOMAINS.map((d) => ({
+    slug: d.id,
+    category: d.id,
+    label: d.shortTitle,
+    description: d.description,
+    icon: d.icon,
+  })),
+  // Legacy category alias retained for backward compatibility
   {
     slug: 'memory',
     category: 'memory',
     label: 'Memory Management',
     description: 'Understand ARC, strong/weak/unowned references, retain cycles, and memory debugging tools.',
     icon: 'MM',
-  },
-  {
-    slug: 'objc',
-    category: 'objc',
-    label: 'Objective-C',
-    description: 'Navigate the Objective-C runtime, method swizzling, bridging, and legacy iOS patterns.',
-    icon: 'OC',
-  },
-  {
-    slug: 'system-design',
-    category: 'system-design',
-    label: 'System Design',
-    description: 'Design offline-first systems, data sync strategies, caching pipelines, and scalable mobile architecture.',
-    icon: 'SD',
-  },
-  {
-    slug: 'debugging',
-    category: 'debugging',
-    label: 'Debugging',
-    description: 'Master Instruments, the Memory Graph Debugger, crash analysis, and performance profiling.',
-    icon: 'Db',
   },
 ];
 
