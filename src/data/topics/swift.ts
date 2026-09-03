@@ -1,6 +1,180 @@
 import type { ArticleTopic } from '@/types';
 
 export const swiftTopics: ArticleTopic[] = [
+  // ─── Variables, Constants & Type Inference ─────────────────────────────────
+  {
+    id: 'swift-variables-types',
+    slug: 'variables-and-types',
+    title: 'Variables, Constants & Type Inference',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description: "Type safety, type inference, let vs var, and type aliases — how Swift decides what a value's type is and whether it can change.",
+    difficulty: 'foundational',
+    estimatedTime: 20,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'high',
+    tags: ['variables', 'types', 'type-inference', 'let', 'var'],
+    relatedTopics: ['swift-optionals', 'swift-control-flow', 'swift-functions'],
+    nextTopic: 'swift-optionals',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: "let declares a constant — give it a value once, and that name can never be reassigned. var declares a variable — its value can be reassigned later. Swift also figures out each one's type automatically from the value you give it, and that type is locked in from then on. A typealias just gives an existing type a second name — it doesn't create a new type.",
+      },
+      {
+        type: 'heading',
+        id: 'h-what-is-it',
+        level: 2,
+        content: 'What is it?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-intro',
+        content: 'Every stored value in Swift needs a name, and you choose one of two ways to declare it.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-let',
+        content: "**let — a constant.** Once you assign a value to a let, it's permanent for the life of that constant — trying to assign it again is a compile error, not a runtime warning. Use let for anything that shouldn't change after it's set: a person's date of birth, a configuration value loaded at startup, an ID passed into a function, the result of a calculation you're about to use but never modify.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-var',
+        content: '**var — a variable.** A var can be reassigned as many times as you need. Use it for anything that\'s expected to change over its lifetime: a loop counter, a running total, a piece of UI state like "is this toggle on," or a value you build up step by step before it\'s finished.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-why',
+        content: '**Why this distinction exists.** Many languages only have one general-purpose way to declare a name, and whether it\'s safe to reassign is left to convention and memory. Swift makes the intent explicit in the code itself — and enforces it. This isn\'t just a style preference: a name declared let is a guarantee the compiler checks for you, which means a whole category of bugs (something changed a value you didn\'t expect to change) simply can\'t happen.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-practice',
+        content: '**In practice**, Swift developers are encouraged to default to let and only switch to var when a value genuinely needs to change. This is a deliberate habit: it makes code easier to reason about, because seeing let tells you immediately "this value is fixed here," without having to trace the rest of the function to check.',
+      },
+      {
+        type: 'heading',
+        id: 'h-let-vs-var',
+        level: 2,
+        content: 'let vs var',
+      },
+      {
+        type: 'code',
+        id: 'code-let-vs-var',
+        language: 'swift',
+        caption: 'Reassignment vs. mutation',
+        content: `let maxRetries = 3
+// maxRetries = 4   // ❌ compile error — cannot reassign a let
+
+var attempts = 0
+attempts += 1        // ✅ var allows reassignment
+
+// The subtlety: let on a reference type only freezes the *binding*,
+// not the object's own mutable state.
+class Counter {
+    var value = 0
+}
+
+let counter = Counter()
+counter.value += 1   // ✅ allowed — counter itself wasn't reassigned,
+                      //    only a property on the object it points to
+// counter = Counter() // ❌ compile error — this WOULD be reassignment`,
+      },
+      {
+        type: 'callout',
+        id: 'c-ref-mutability',
+        variant: 'warning',
+        title: 'Warning',
+        content: '`let` on a class instance does not make the instance immutable — it only prevents the constant from being pointed at a different object. If you need the object\'s own properties to be unchangeable, declare those properties `let` inside the class itself, or use a struct instead.',
+      },
+      {
+        type: 'heading',
+        id: 'h-type-inference',
+        level: 2,
+        content: 'Type inference',
+      },
+      {
+        type: 'code',
+        id: 'code-type-inference',
+        language: 'swift',
+        caption: 'Inference and when annotation is required',
+        content: `let name = "Johnson"        // inferred: String
+let count = 5                // inferred: Int
+let ratio = 5 / 2             // inferred: Int → value is 2, not 2.5
+
+let precise: Double = 5 / 2   // still Int division first, then converted — still 2.0!
+let correct = 5.0 / 2.0        // Double from the start — 2.5
+
+var total: Int                // no initializer yet — annotation required
+total = 10`,
+      },
+      {
+        type: 'callout',
+        id: 'c-numeric-literals',
+        variant: 'tip',
+        title: 'Tip',
+        content: 'Numeric literals default to `Int` (whole numbers) or `Double` (decimals) unless the surrounding context suggests otherwise. This is a common interview trap: `5 / 2` performs integer division and evaluates to `2`, regardless of what type you eventually assign the result to — the division happens before any conversion.',
+      },
+      {
+        type: 'heading',
+        id: 'h-type-aliases',
+        level: 2,
+        content: 'Type aliases',
+      },
+      {
+        type: 'code',
+        id: 'code-type-aliases',
+        language: 'swift',
+        caption: 'typealias is not a new type',
+        content: `typealias UserID = String
+
+let id: UserID = "abc123"
+let raw: String = id   // ✅ fully interchangeable — no type-safety boundary
+
+// If you actually need distinct, non-interchangeable identity:
+struct StrongUserID {
+    let rawValue: String
+}
+// StrongUserID and String are now genuinely different types —
+// the compiler will reject accidental interchange.`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Assuming `let` on a class instance makes the whole object immutable — it only locks the reference, not the object\'s internal `var` properties.',
+          'Treating integer division as if it produces a fractional result — `5 / 2` is `2`, not `2.5`, because both operands are inferred as `Int` before any conversion happens.',
+          'Using a `typealias` when what\'s actually needed is a distinct type for compile-time safety (e.g. preventing a `UserID` from being passed where a plain `String` is expected) — a typealias won\'t catch that; a wrapper struct will.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          "What's the difference between `let` and `var`, and does `let` ever allow mutation?",
+          'Does a class instance stored in a `let` constant become fully immutable?',
+          "How does Swift's type inference work, and when do you need an explicit type annotation?",
+          'Does a `typealias` create a new, distinct type?',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-optionals', 'swift-control-flow', 'swift-functions'],
+      },
+    ],
+  },
+
   // ─── Optionals ─────────────────────────────────────────────────────────────
   {
     id: 'swift-optionals',
@@ -25,32 +199,111 @@ export const swiftTopics: ArticleTopic[] = [
       },
       {
         type: 'heading',
-        id: 'h-unwrap',
+        id: 'h-why',
         level: 2,
-        content: 'Safe Unwrapping',
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: 'In most languages — JavaScript, Python, Objective-C, Java — any variable can secretly be `null` or `nil`, and the compiler has no way to warn you. You might write code that looks completely safe, but when that variable turns out to be null at runtime, your app crashes. Often the crash happens far from where the null actually came from, making it frustrating to debug.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: "Swift takes a different philosophy: if a value *might* be absent, its type **says so explicitly**. A regular `String` can never be nil — if you need to represent \"no string,\" you have to declare it as `String?` (an Optional String), and Swift **requires** you to handle that possibility before you can use the value inside.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content: "This doesn't eliminate the problem of missing values — every program has to deal with absent data sometimes. What it does is move the problem from \"crashes at runtime\" to \"compiler tells you upfront.\" You get a compile-time error instead of a 3am production crash.",
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-enum',
+        content: 'An Optional is really just a generic enum with two cases: `.some(Value)` — the value is present, or `.none` — there is no value (nil). There are several ways to unwrap an optional and access the value inside, and choosing the right one is most of what separates readable code from hard-to-follow code.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-iflet-intro',
+        content: '**if let** — Scoped binding. Use this when you only need the unwrapped value inside one specific block:',
       },
       {
         type: 'code',
-        id: 'code-unwrap',
+        id: 'code-iflet',
         language: 'swift',
         content: `let name: String? = "Alice"
 
-// if let (scoped binding)
 if let name {
     print("Hello, \\(name)")
+    // name is a non-optional String here
 }
-
-// guard let (early exit)
-func greet(_ name: String?) {
+// name is back to being String? out here`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-iflet-note',
+        content: "The variable `name` inside the if block is a *different binding* than the original optional — it's shadowing the outer name. This is safe and readable when the unwrapped value is only used in one place.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guardlet-intro',
+        content: "**guard let** — Early exit. Use this when you want to unwrap at the start of a function and exit if the value is missing. It's the \"happy path\" pattern:",
+      },
+      {
+        type: 'code',
+        id: 'code-guardlet',
+        language: 'swift',
+        content: `func greet(_ name: String?) {
     guard let name else { return }
+    // name is non-optional from here to the end of the function
     print("Hello, \\(name)")
-}
-
-// Nil coalescing (provide a default)
-let display = name ?? "Guest"
-
-// Optional chaining (propagates nil)
-let count = name?.count  // Int?`,
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guardlet-note',
+        content: '`guard let` enforces an early exit in the else clause, which prevents the pyramid-of-doom problem you get when nesting multiple if lets. Senior Swift developers prefer this pattern.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-coalesc-intro',
+        content: '**Nil coalescing (??)** — Provide a default. Use this when you have a sensible fallback value:',
+      },
+      {
+        type: 'code',
+        id: 'code-coalesc',
+        language: 'swift',
+        content: `let display = name ?? "Guest"
+// If name is nil, display is "Guest". Otherwise, display is the unwrapped value.`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-chain-intro',
+        content: '**Optional chaining (?.)** — Safe navigation. Use this when accessing a property or method that might not exist:',
+      },
+      {
+        type: 'code',
+        id: 'code-chain',
+        language: 'swift',
+        content: `let count = name?.count  // Int?
+// If name is nil, count is nil. If name exists, count is its character count.`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-chain-note',
+        content: "Optional chaining automatically propagates nil if any link in the chain fails, and wraps the result in an Optional. No crash, no explicit unwrapping.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-summary',
+        content: "Each of these has a different use case. Knowing which one to reach for is the difference between code that's clear to read and code that's defensive and verbose.",
       },
       {
         type: 'callout',
@@ -98,6 +351,32 @@ let count = name?.count  // Int?`,
         content: 'Structs use **value semantics** — each assignment creates an independent copy. Classes use **reference semantics** — multiple variables can reference the same object. Prefer structs by default in Swift; use classes when you need identity, inheritance, or Objective-C interop.',
       },
       {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: 'This choice — struct or class — is one of the first decisions you make when designing a type, and it shapes everything downstream: how mutations work, whether you need locks for thread safety, whether you can use inheritance, and how much memory overhead each instance carries.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'In older languages like Java or Python, everything is a reference type (objects) or a primitive type (numbers), and that distinction is baked into the language. Swift lets *you* decide per type. That freedom is powerful, but it means you have to understand the trade-offs.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content: 'The fundamental difference is about **identity**. A struct is defined by its *values* — two structs with identical properties are considered identical, period. A class instance is defined by its *identity* — even if two class instances have identical properties, they are still different objects, and mutations to one don\'t affect the other.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-4',
+        content: 'That sounds abstract. Here\'s where it matters in real code: if you\'re modeling data that flows through your app (a User, a network response, a configuration), a struct is simpler and safer — copies are automatic and thread-safe. If you\'re modeling an entity with a persistent identity that changes over time (a UIViewController, a database connection, a singleton service), a class is better because identity and mutation go hand-in-hand.',
+      },
+      {
         type: 'comparison',
         id: 'comp-1',
         leftLabel: 'Struct (Value Semantics)',
@@ -140,11 +419,112 @@ b.x = 10
         ],
       },
       {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use struct vs class',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-when-struct-intro',
+        content: '**Use a struct when:**',
+      },
+      {
+        type: 'list',
+        id: 'l-when-struct',
+        ordered: false,
+        items: [
+          'The type represents data (a Point, a User, a network response). Copies are automatic and thread-safe.',
+          "You don't need inheritance. Structs don't support inheritance, and that's usually a good thing — it forces you to compose behavior instead.",
+          'The instance doesn\'t have a persistent identity that matters. Two Users with the same ID and name are interchangeable; two UIViewControllers are not.',
+          'You want mutations to be explicit. Because copies happen automatically, assigning `var a = b` and then mutating `a` won\'t surprise anyone — it\'s obvious that `a` is independent.',
+        ],
+      },
+      {
+        type: 'code',
+        id: 'code-struct-example',
+        language: 'swift',
+        caption: 'struct for data',
+        content: `struct User {
+    let id: Int
+    let name: String
+    var email: String
+}
+
+var alice = User(id: 1, name: "Alice", email: "alice@example.com")
+var aliceCopy = alice
+aliceCopy.email = "newemail@example.com"
+
+// alice.email is still "alice@example.com"
+// Each variable has its own independent copy.`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-when-class-intro',
+        content: '**Use a class when:**',
+      },
+      {
+        type: 'list',
+        id: 'l-when-class',
+        ordered: false,
+        items: [
+          'The type represents an object with persistent identity. A UIViewController, a network session, a data model that syncs to a server — these are *entities* that exist and change over time, not just data values.',
+          'You need inheritance. Classes support subclassing; structs don\'t.',
+          'You need reference semantics explicitly. Multiple parts of your code should reference the same object and see each other\'s mutations.',
+          'You need Objective-C interoperability. Some Apple APIs and existing frameworks require class instances. (This matters less in modern Swift, but if you\'re maintaining legacy code or bridging to Objective-C, it\'s relevant.)',
+        ],
+      },
+      {
+        type: 'code',
+        id: 'code-class-example',
+        language: 'swift',
+        caption: 'class for identity',
+        content: `class NetworkSession {
+    private var token: String?
+    
+    func authenticate(username: String, password: String) {
+        // Fetch token from server, store it
+        self.token = "..."
+    }
+    
+    func request(path: String) -> Data {
+        // Use self.token for all requests
+    }
+}
+
+let session = NetworkSession()
+session.authenticate(username: "alice", password: "secret")
+
+let alias = session  // Both refer to the SAME object
+alias.authenticate(...) // Affects session too
+
+// There is only one NetworkSession instance here.
+// Multiple references to it see each other's changes.`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-when-default',
+        content: '**The practical default:** Start with struct. Only switch to class when you discover a reason to — usually because you need inheritance, or because the type represents a persistent entity (not just data), or because you\'re working with an API that requires it.',
+      },
+      {
         type: 'callout',
         id: 'c-prefer-struct',
         variant: 'tip',
-        title: 'Swift standard library uses structs heavily',
-        content: 'String, Array, Dictionary, and Set are all structs in Swift. They use copy-on-write optimization to avoid unnecessary copies while maintaining value semantics.',
+        title: 'Tip: Copy-on-Write optimization',
+        content: `Copying a struct is cheap in theory, but copying a large array or string every time you assign it would be wasteful. Swift's stdlib types (String, Array, Dictionary, Set) are structs, but they use **copy-on-write** (CoW) optimization under the hood.
+
+Here's how it works: when you assign an array to another variable, they initially share the same underlying buffer in memory. Only when one of them is *mutated* does Swift make a copy. Until then, they're aliases pointing to the same storage.
+
+\`\`\`swift
+var a = [1, 2, 3]
+var b = a      // b points to the SAME underlying buffer as a
+b.append(4)    // Now CoW kicks in — b's buffer is copied, then mutated
+               // a is still [1, 2, 3]; b is [1, 2, 3, 4]
+\`\`\`
+
+From the outside, this looks like normal value semantics — \`a\` and \`b\` are independent copies. But under the hood, Swift was smart about avoiding an expensive full copy until it was actually necessary. This is why you can use Array and String freely in Swift without worrying about performance; the language takes care of it for you.
+
+You don't need to implement CoW for simple structs — just use them naturally. Apple's standard library does it for you where it matters.`,
       },
       {
         type: 'interview',

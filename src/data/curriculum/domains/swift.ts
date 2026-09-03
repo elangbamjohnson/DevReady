@@ -25,7 +25,7 @@ export const swiftDomain: CurriculumDomain = {
           domainId: 'swift',
           moduleId: 'swift-fundamentals-mod',
           difficulty: 'foundational',
-          status: 'coming-soon',
+          status: 'available',
           priority: 'P0',
           description: 'Type safety, type inference, var vs let, type aliases, and numerical types.',
           estimatedMinutes: 20,
