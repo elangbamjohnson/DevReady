@@ -2434,6 +2434,450 @@ print("User: \\(user)")  // Prints: User: Alice <alice@example.com>`,
     ],
   },
 
+  // ─── Error Handling: throws, Result & Typed Throws ─────────────────────────
+  {
+    id: 'swift-error-handling',
+    slug: 'error-handling',
+    title: 'Error Handling: throws, Result & Typed Throws',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description:
+      'How Swift handles failure — the Error protocol, throw/try/catch mechanics, rethrows, the Result type, Swift 6 typed throws, and guaranteed cleanup with defer.',
+    difficulty: 'intermediate',
+    estimatedTime: 30,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '2.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'high',
+    tags: ['errors', 'throws', 'try', 'typed-throws', 'result', 'defer'],
+    relatedTopics: ['swift-optionals', 'swift-struct-vs-class', 'swift-generics'],
+    furtherReading: [
+      {
+        title: 'Error Handling — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/errorhandling',
+        source: 'swift-org',
+      },
+      {
+        title: 'Result — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/result',
+        source: 'apple-developer',
+      },
+    ],
+    previousTopic: 'swift-strings',
+    nextTopic: 'swift-structs-vs-classes',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'Swift handles errors explicitly, not with exceptions that can strike anywhere. A function that can fail is marked `throws`, and callers must acknowledge that with `try`. You catch and handle errors with `do-catch`, or convert them to optionals with `try?`. For cases where you want to model success/failure as a value (not control flow), use `Result<Success, Failure>`. Swift 6 adds **typed throws**, letting you specify exactly which error type a function can throw.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'Many languages use exceptions — you throw an error anywhere, and it propagates up the call stack until something catches it, sometimes crashing the whole program if nothing does. This is powerful but risky: you often can\'t tell just by reading a function signature whether it can fail, or what kinds of failures to expect.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content:
+          'Swift takes a different approach: if a function can fail, its signature says so — `func loadFile() throws -> Data`. The compiler enforces that callers acknowledge this with `try`. You can\'t accidentally call a throwing function and forget that it might fail; the compiler won\'t let you.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content:
+          'This is the same philosophy behind Optionals (make possible failure visible in the type system), applied to a different kind of failure. It doesn\'t eliminate errors — it makes them impossible to silently ignore.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'heading',
+        id: 'h-error-protocol',
+        level: 3,
+        content: 'The Error protocol and custom error types',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-error-protocol-1',
+        content:
+          'Any type can represent an error by conforming to the `Error` protocol — usually an enum, since errors typically come in a known set of cases:',
+      },
+      {
+        type: 'code',
+        id: 'code-network-error',
+        language: 'swift',
+        content: `enum NetworkError: Error {
+    case noConnection
+    case timeout
+    case invalidResponse(statusCode: Int)
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-error-protocol-2',
+        content:
+          'You can add more detail with `LocalizedError`, which provides user-facing descriptions:',
+      },
+      {
+        type: 'code',
+        id: 'code-localized-error',
+        language: 'swift',
+        content: `enum NetworkError: Error, LocalizedError {
+    case noConnection
+    case timeout
+    case invalidResponse(statusCode: Int)
+    
+    var errorDescription: String? {
+        switch self {
+        case .noConnection:
+            return "No internet connection."
+        case .timeout:
+            return "The request timed out."
+        case .invalidResponse(let code):
+            return "Server returned status code \\(code)."
+        }
+    }
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-throw-try',
+        level: 3,
+        content: 'throw, try, try?, and try! — propagating and calling',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-throw-try-1',
+        content:
+          'A function that can fail is marked `throws`, and uses `throw` to signal failure:',
+      },
+      {
+        type: 'code',
+        id: 'code-fetch-user',
+        language: 'swift',
+        content: `func fetchUser(id: String) throws -> User {
+    guard !id.isEmpty else {
+        throw NetworkError.invalidResponse(statusCode: 400)
+    }
+    // ... fetch logic
+    return User(id: id)
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-throw-try-2',
+        content:
+          'At the call site, you must acknowledge the possibility of failure with `try`:',
+      },
+      {
+        type: 'code',
+        id: 'code-try-variants',
+        language: 'swift',
+        content: `// Option 1: try with do-catch (see below)
+// Option 2: try? — converts to an optional, discarding the error details
+let user = try? fetchUser(id: "123")  // User? — nil if it threw
+
+// Option 3: try! — force-try, crashes if it throws (use only when you're certain it can't fail)
+let user2 = try! fetchUser(id: "123")`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-throw-try-3',
+        content:
+          '`try?` is useful when you don\'t care *why* something failed, only *whether* it succeeded. `try!` should be rare — it\'s the throwing equivalent of force-unwrapping an optional, with the same risk.',
+      },
+      {
+        type: 'heading',
+        id: 'h-do-catch',
+        level: 3,
+        content: 'do-catch — structured handling with pattern matching',
+      },
+      {
+        type: 'code',
+        id: 'code-do-catch',
+        language: 'swift',
+        content: `do {
+    let user = try fetchUser(id: "123")
+    print("Loaded: \\(user)")
+} catch NetworkError.noConnection {
+    print("Please check your internet connection")
+} catch NetworkError.invalidResponse(let statusCode) {
+    print("Server error: \\(statusCode)")
+} catch {
+    // Catch-all — 'error' is implicitly available here
+    print("Unexpected error: \\(error)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-do-catch',
+        content:
+          'Each `catch` clause can match a specific error case (with pattern matching, just like `switch`), and the final catch-all captures anything else. This is the same pattern-matching power you use elsewhere in Swift, applied to error handling.',
+      },
+      {
+        type: 'heading',
+        id: 'h-rethrows',
+        level: 3,
+        content: 'rethrows — functions that only throw if their closure does',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-rethrows-1',
+        content:
+          'Some functions (like `map`, `filter`) take a closure that might throw, and the function itself only throws if that closure does. This is what `rethrows` signals:',
+      },
+      {
+        type: 'code',
+        id: 'code-rethrows',
+        language: 'swift',
+        content: `func processAll<T>(_ items: [T], transform: (T) throws -> T) rethrows -> [T] {
+    var results: [T] = []
+    for item in items {
+        results.append(try transform(item))
+    }
+    return results
+}
+
+// If transform doesn't throw, calling processAll doesn't require try
+let doubled = processAll([1, 2, 3]) { $0 * 2 }
+
+// If transform can throw, calling processAll requires try
+let risky = try processAll([1, 2, 3]) { value in
+    guard value > 0 else { throw NetworkError.timeout }
+    return value * 2
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-rethrows-2',
+        content:
+          '`rethrows` is a contract: the function promises it only throws when its closure parameter throws, never on its own.',
+      },
+      {
+        type: 'heading',
+        id: 'h-result-type',
+        level: 3,
+        content: 'The Result type — success/failure as a value',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-result-type-1',
+        content:
+          'Sometimes you want to represent success or failure as a value you can store, pass around, or use in a completion handler — not just as control flow. That\'s what `Result<Success, Failure>` is for:',
+      },
+      {
+        type: 'code',
+        id: 'code-result-type',
+        language: 'swift',
+        content: `func fetchUserResult(id: String, completion: @escaping (Result<User, NetworkError>) -> Void) {
+    // async work...
+    if id.isEmpty {
+        completion(.failure(.invalidResponse(statusCode: 400)))
+    } else {
+        completion(.success(User(id: id)))
+    }
+}
+
+fetchUserResult(id: "123") { result in
+    switch result {
+    case .success(let user):
+        print("Got user: \\(user)")
+    case .failure(let error):
+        print("Failed: \\(error)")
+    }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-result-type-2',
+        content: 'You can bridge between throwing functions and Result:',
+      },
+      {
+        type: 'code',
+        id: 'code-result-bridge',
+        language: 'swift',
+        content: `// Wrap a throwing call into a Result
+let result = Result { try fetchUser(id: "123") }
+
+// Unwrap a Result back into throwing code
+let user = try result.get()
+
+// Transform the success value without unwrapping
+let userName = result.map { $0.name }`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-result-type-3',
+        content:
+          'Use `Result` when you need to store or delay handling the outcome (completion handlers, caching a failed/succeeded state). Use `throws`/`try` for immediate, synchronous error propagation.',
+      },
+      {
+        type: 'heading',
+        id: 'h-typed-throws',
+        level: 3,
+        content: 'Swift 6 typed throws',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-typed-throws-1',
+        content:
+          'Normally, `throws` means "this can throw *any* `Error`" — equivalent to `throws(any Error)`. Swift 6 lets you specify exactly which error type:',
+      },
+      {
+        type: 'code',
+        id: 'code-typed-throws',
+        language: 'swift',
+        content: `func loadFile(path: String) throws(FileError) -> Data {
+    // ...
+}
+
+do {
+    let data = try loadFile(path: "config.json")
+} catch {
+    // 'error' here is statically typed as FileError, not just 'any Error'
+    // No downcasting needed
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-typed-throws-2',
+        content:
+          'Why does this matter? With untyped `throws`, catching an error means dealing with `any Error` — you often need to downcast to check the specific type. With typed throws, the compiler knows the exact type, giving you exhaustive, type-safe catch handling without casting. There\'s also a performance benefit: `any Error` requires existential boxing (a small runtime overhead); a typed throw avoids that.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-typed-throws-3',
+        content:
+          'The trade-off: typed throws tightly couples your function\'s signature to a specific error type. If you\'re building a public API that might need to add new error cases later, untyped `throws` gives you more flexibility. Typed throws is best for closed, well-defined systems — like embedded Swift or performance-critical internal code.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-typed-throws-4',
+        content:
+          '`throws(Never)` is a special case — it tells the compiler "this function is guaranteed to never throw," which is useful for writing generic code that works uniformly across throwing and non-throwing functions.',
+      },
+      {
+        type: 'heading',
+        id: 'h-defer',
+        level: 3,
+        content: 'defer — guaranteed cleanup',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-defer-1',
+        content:
+          '`defer` schedules code to run when the current scope exits — whether normally, via return, or because an error was thrown:',
+      },
+      {
+        type: 'code',
+        id: 'code-defer',
+        language: 'swift',
+        content: `func processFile(path: String) throws {
+    let file = openFile(path)
+    defer {
+        closeFile(file)  // Always runs, even if an error is thrown below
+    }
+    
+    guard file.isValid else {
+        throw NetworkError.invalidResponse(statusCode: 500)
+    }
+    // ... process file
+}  // closeFile runs here, regardless of how the function exits`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-defer-2',
+        content:
+          'If you have multiple `defer` blocks in the same scope, they execute in reverse order (LIFO — last in, first out), like unwinding a stack:',
+      },
+      {
+        type: 'code',
+        id: 'code-defer-lifo',
+        language: 'swift',
+        content: `func demo() {
+    defer { print("First deferred") }
+    defer { print("Second deferred") }
+    print("Function body")
+}
+// Prints: "Function body", then "Second deferred", then "First deferred"`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-defer-3',
+        content:
+          '`defer` is essential for resource cleanup (closing files, releasing locks) where you need a guarantee that cleanup happens no matter which exit path the function takes.',
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Using `try!` in code that can realistically fail — this crashes at runtime, just like force-unwrapping an optional that\'s nil.',
+          'Forgetting that `try?` discards the specific error — if you need to know *why* something failed, use `do-catch`, not `try?`.',
+          'Overusing untyped `throws` when a `Result` would communicate intent more clearly (especially for async completion handlers).',
+          'Not ordering `catch` clauses from most specific to least specific — like `switch`, more specific patterns should come first, with the catch-all last.',
+          'Forgetting that `defer` blocks run in reverse order when there are multiple — this can cause confusing cleanup ordering bugs if you\'re not aware of it.',
+          'Using typed throws for public APIs that need room to evolve — it locks callers into a specific error type, making it a breaking change to add new error cases later.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'l-when-to-use',
+        ordered: false,
+        items: [
+          'Use `throws`/`try`/`do-catch` for synchronous operations where failure should propagate immediately.',
+          'Use `try?` when you only care about success/failure, not the specific error.',
+          'Use `Result` for deferred or asynchronous outcomes (completion handlers, cached results) where you want to pass the success/failure state around as a value.',
+          'Use `rethrows` when writing generic functions that take a throwing closure and shouldn\'t introduce failure on their own.',
+          'Use typed throws for closed, performance-sensitive systems where you control both sides of the API. Stick with untyped `throws` for public APIs likely to evolve.',
+          'Use `defer` any time you acquire a resource that needs guaranteed cleanup, regardless of how the function exits.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'What is the difference between try, try?, and try!, and when should you use each?',
+          'How does do-catch pattern matching work when you have multiple catch clauses for different error cases?',
+          'What does rethrows mean, and how is it different from throws?',
+          'When would you use Result<Success, Failure> instead of throws/try?',
+          'What is defer used for, and in what order do multiple defer blocks execute?',
+          'What does this code print, and why? (defer execution with thrown error)',
+          'What are Typed Throws in Swift 6, and when should you prefer them over untyped throws?',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-optionals', 'swift-struct-vs-class', 'swift-generics'],
+      },
+    ],
+  },
+
   // ─── Protocols ────────────────────────────────────────────────────────────
   {
     id: 'swift-protocols',

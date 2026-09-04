@@ -44,14 +44,14 @@ if (process.env.NODE_ENV === 'development') {
   // Validate relatedTopics references exist
   allArticleTopics.forEach(topic => {
     topic.relatedTopics.forEach(relId => {
-      if (!ids.includes(relId)) {
+      if (!ids.includes(relId) && !curriculumRepository.getTopicById(relId)) {
         console.warn(`[topicRepository] Topic "${topic.id}" references unknown relatedTopic: "${relId}"`);
       }
     });
-    if (topic.previousTopic && !ids.includes(topic.previousTopic)) {
+    if (topic.previousTopic && !ids.includes(topic.previousTopic) && !curriculumRepository.getTopicById(topic.previousTopic)) {
       console.warn(`[topicRepository] Topic "${topic.id}" has unknown previousTopic: "${topic.previousTopic}"`);
     }
-    if (topic.nextTopic && !ids.includes(topic.nextTopic)) {
+    if (topic.nextTopic && !ids.includes(topic.nextTopic) && !curriculumRepository.getTopicById(topic.nextTopic)) {
       console.warn(`[topicRepository] Topic "${topic.id}" has unknown nextTopic: "${topic.nextTopic}"`);
     }
   });
@@ -124,7 +124,8 @@ export const topicRepository = {
 
     const resolveTopic = (id?: string): ArticleTopic | undefined => {
       if (!id) return undefined;
-      const found = allArticleTopics.find(t => t.id === id);
+      const targetId = id === 'swift-structs-vs-classes' ? 'swift-struct-vs-class' : id;
+      const found = allArticleTopics.find(t => t.id === targetId);
       if (found) return found;
       const curr = curriculumRepository.getTopicById(id);
       if (curr) {
