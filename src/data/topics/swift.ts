@@ -1337,6 +1337,409 @@ repeat {
     ],
   },
 
+  // ─── Functions & Parameter Semantics ───────────────────────────────────────
+  {
+    id: 'swift-functions',
+    slug: 'functions',
+    title: 'Functions & Parameter Semantics',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description:
+      'Function declaration, parameter labels, default values, variadic parameters, and inout semantics — how Swift lets you write flexible, expressive function signatures.',
+    difficulty: 'foundational',
+    estimatedTime: 25,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'high',
+    tags: ['functions', 'inout', 'parameters', 'signatures', 'argument-labels'],
+    relatedTopics: ['swift-closures', 'swift-control-flow', 'swift-generics'],
+    previousTopic: 'swift-control-flow',
+    nextTopic: 'swift-collections',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'A function is a named block of reusable code that takes parameters and returns a value. Swift functions are flexible: you can give parameters external labels for readability, provide defaults so callers don\'t have to specify everything, use `inout` to modify parameters in place, or accept variable numbers of arguments with `...` (variadic).',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'Functions are how you organize code into reusable pieces — no different from other languages. But Swift\'s function syntax is unusually flexible and readable. Most languages have one straightforward way to declare a function; Swift gives you multiple tools to make function calls read like English sentences.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'Compare this JavaScript call:',
+      },
+      {
+        type: 'code',
+        id: 'code-js-call',
+        language: 'text',
+        content: `makeRequest(url, "GET", {timeout: 5000}, true)`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content:
+          'What do those last two arguments mean? You have to read the function definition to find out.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-4',
+        content: 'In Swift:',
+      },
+      {
+        type: 'code',
+        id: 'code-swift-call',
+        language: 'swift',
+        content: `makeRequest(url, method: "GET", timeout: 5000, retry: true)`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-5',
+        content:
+          'The **argument labels** make the intent crystal clear without reading the definition.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-6',
+        content:
+          'Or consider a function that needs to modify its argument (like a sort function that rearranges an array in place). In most languages, you pass a reference and hope. In Swift, you use `inout` to make it explicit: "this function will modify this parameter."',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-7',
+        content:
+          'These aren\'t cosmetic — they make code safer and more readable.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-basics-intro',
+        content: '**Function basics**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-basics-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-greet-example',
+        language: 'swift',
+        content: `func greet(name: String) -> String {
+    return "Hello, \\(name)!"
+}
+
+let message = greet(name: "Alice")
+print(message)  // "Hello, Alice!"`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-basics-parts-intro',
+        content: 'A function has:',
+      },
+      {
+        type: 'list',
+        id: 'l-function-parts',
+        ordered: false,
+        items: [
+          'A name: `greet`',
+          'Parameters: `name: String` (parameter name, then type)',
+          'A return type: `-> String`',
+          'A body: the code that runs',
+        ],
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-omit-return',
+        content: 'If a function doesn\'t return anything, you omit the `-> Type`:',
+      },
+      {
+        type: 'code',
+        id: 'code-void-greeting',
+        language: 'swift',
+        content: `func printGreeting(name: String) {
+    print("Hello, \\(name)!")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-labels-intro',
+        content: '**Argument labels — external vs internal names**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-labels-desc',
+        content:
+          'Here\'s a powerful Swift feature: a parameter can have two names — an external label (what callers use) and an internal name (what the function body uses).',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-labels-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-labels-example',
+        language: 'swift',
+        content: `func move(to destination: String) {
+    print("Moving to \\(destination)")
+}
+
+move(to: "Paris")  // 'to' is the external label, makes the call read naturally`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-labels-underscore-intro',
+        content: 'This is equivalent to:',
+      },
+      {
+        type: 'code',
+        id: 'code-underscore-label',
+        language: 'swift',
+        content: `func move(_ destination: String) {
+    print("Moving to \\(destination)")
+}
+
+move("Paris")  // underscore means no external label — must be positional`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-labels-why',
+        content:
+          'Why does this matter? Consider a function that removes an element:',
+      },
+      {
+        type: 'code',
+        id: 'code-remove-example',
+        language: 'swift',
+        content: `// Bad — what does true mean?
+array.remove(at: 5, force: true)
+
+// Good — labels make intent clear
+func remove(at index: Int, force shouldForce: Bool) {
+    // ...
+}
+array.remove(at: 5, force: true)`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-defaults-intro',
+        content: '**Default parameter values**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-defaults-desc',
+        content:
+          'You can provide defaults so callers don\'t have to specify everything:',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-defaults-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-connect-defaults',
+        language: 'swift',
+        content: `func connect(to host: String, port: Int = 8080) {
+    print("Connecting to \\(host):\\(port)")
+}
+
+connect(to: "localhost")           // Uses default port 8080
+connect(to: "localhost", port: 3000)  // Overrides default`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-defaults-ordering',
+        content:
+          'Parameters with defaults must come after parameters without defaults (logical — you can\'t require an argument after an optional one).',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-variadic-intro',
+        content: '**Variadic parameters — accepting multiple values**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-variadic-desc',
+        content: 'Use `...` to accept any number of arguments:',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-variadic-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-sum-variadic',
+        language: 'swift',
+        content: `func sum(_ numbers: Int...) -> Int {
+    var total = 0
+    for num in numbers {
+        total += num
+    }
+    return total
+}
+
+print(sum(1, 2, 3))        // 6
+print(sum(1, 2, 3, 4, 5))  // 15`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-variadic-notes',
+        content:
+          'Inside the function, `numbers` is an array `[Int]`. Variadic parameters must be the last parameter (or the last before a trailing closure).',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-inout-intro',
+        content: '**inout parameters — modifying arguments**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-inout-desc',
+        content:
+          'By default, function parameters are immutable — you can\'t change them. But sometimes you want to modify an argument and have that change visible to the caller. That\'s what `inout` is for:',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-inout-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-inout-example',
+        language: 'swift',
+        content: `func increment(_ value: inout Int) {
+    value += 1
+}
+
+var x = 5
+increment(&x)
+print(x)  // 6`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-inout-ampersand',
+        content:
+          'Note the `&` when calling — it signals "I\'m passing this by reference for mutation."',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-inout-copy-semantics',
+        content:
+          'Technically, `inout` is copy-in-copy-out: Swift copies the value in, you modify the copy, and Swift copies it back. But the effect is the same as if you\'d modified the original.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-tuples-intro',
+        content: '**Multiple return values with tuples**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-tuples-desc',
+        content: 'Swift functions can return multiple values using tuples:',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-tuples-example-label',
+        content: 'Code Example:',
+      },
+      {
+        type: 'code',
+        id: 'code-divide-tuples',
+        language: 'swift',
+        content: `func divideWithRemainder(_ dividend: Int, by divisor: Int) -> (quotient: Int, remainder: Int) {
+    return (dividend / divisor, dividend % divisor)
+}
+
+let result = divideWithRemainder(17, by: 5)
+print(result.quotient)   // 3
+print(result.remainder)  // 2
+
+// Or destructure
+let (q, r) = divideWithRemainder(17, by: 5)
+print(q, r)  // 3 2`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-tuples-summary',
+        content:
+          'This is cleaner than creating a struct for a simple return value, and it\'s more flexible than single-return languages.',
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Forgetting that parameters are immutable by default — if you try to reassign a parameter, you\'ll get a compiler error. Use `inout` if you need to modify it.',
+          'Mixing up external labels and internal names — the external label is what callers use, the internal is what the function body uses. If you use `to destination`, callers write `to:` but the body uses `destination`.',
+          'Putting a parameter with a default before one without — `func foo(a: Int = 5, b: Int)` is an error. Required parameters come first.',
+          'Using `inout` when a return value would be clearer — if a function modifies one parameter and returns nothing, it\'s harder to understand than a function that returns the modified value.',
+          'Forgetting the `&` when calling an `inout` parameter — `increment(x)` won\'t compile if `increment` expects `inout`; you must write `increment(&x)`.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'l-when-to-use',
+        ordered: false,
+        items: [
+          'Use default parameters to make common cases simple without boilerplate.',
+          'Use argument labels to make function calls readable — `move(to:)` is better than `move(_:)`.',
+          'Use `inout` when you need to modify a collection in place (like sorting), but prefer returning a new value when possible.',
+          'Use variadic parameters for functions that naturally accept "one or more" arguments (like `sum` or `print`).',
+          'Use tuples for multiple return values, especially when returning different types.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'How do `inout` parameters work in Swift? Are they pass-by-reference?',
+          'What is the difference between an argument label and a parameter name in Swift?',
+          'What are default parameter values, and why is the order of parameters important when using them?',
+          'What are variadic parameters, and how are they represented inside the function?',
+          'What is the output of this code? (Default parameter value override)',
+          'What is the advantage of returning multiple values using a tuple instead of creating a struct?',
+          "When would you prefer to return a value from a function instead of using an 'inout' parameter to modify the caller's argument?",
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-closures', 'swift-control-flow', 'swift-generics'],
+      },
+    ],
+  },
+
   // ─── Protocols ────────────────────────────────────────────────────────────
   {
     id: 'swift-protocols',
