@@ -76,7 +76,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col border-r border-neutral-800/80 bg-[#18181b] h-screen sticky top-0 shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
+        'hidden lg:flex flex-col border-r border-border-default bg-surface-1 h-screen sticky top-0 shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
         isCollapsed ? 'w-[68px]' : 'w-60'
       )}
     >
@@ -99,7 +99,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
           </svg>
           <span
             className={cn(
-              'text-base font-bold text-white tracking-tight transition-all duration-300 whitespace-nowrap',
+              'text-base font-bold text-text-primary tracking-tight transition-all duration-300 whitespace-nowrap',
               isCollapsed ? 'opacity-0 w-0 hidden' : 'opacity-100 w-auto block'
             )}
           >
@@ -134,15 +134,15 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
                       ? 'justify-center px-2'
                       : 'justify-start px-3 gap-3',
                     isActive
-                      ? 'bg-violet-950/40 text-violet-400 font-medium'
-                      : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+                      ? 'bg-accent-muted text-accent font-medium'
+                      : 'text-text-secondary hover:text-text-primary hover:bg-surface-2'
                   )}
                 >
                   {Icon && (
                     <Icon
                       className={cn(
                         'w-4 h-4 shrink-0 transition-colors',
-                        isActive ? 'text-violet-400' : 'text-neutral-400 group-hover:text-neutral-200'
+                        isActive ? 'text-accent' : 'text-text-tertiary group-hover:text-text-primary'
                       )}
                       strokeWidth={1.75}
                     />
@@ -158,7 +158,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
 
                   {/* Notification count badge if present */}
                   {!isCollapsed && badge && (
-                    <span className="ml-auto text-xs font-semibold text-violet-400 font-mono">
+                    <span className="ml-auto text-xs font-semibold text-accent font-mono">
                       {badge}
                     </span>
                   )}
@@ -172,12 +172,12 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
         <div className="mt-6 mb-2">
           {!isCollapsed ? (
             <div className="px-5 mb-1.5">
-              <span className="text-[11px] font-semibold text-neutral-500 uppercase tracking-wider">
+              <span className="text-[11px] font-semibold text-text-tertiary uppercase tracking-wider">
                 Topics
               </span>
             </div>
           ) : (
-            <div className="w-6 mx-auto border-t border-neutral-800/80 mb-2" />
+            <div className="w-6 mx-auto border-t border-border-default mb-2" />
           )}
 
           <ul className={cn('space-y-0.5', isCollapsed ? 'px-2' : 'px-3')}>
@@ -194,8 +194,8 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
                         ? 'justify-center px-2'
                         : 'justify-start px-3 gap-3',
                       isActive
-                        ? 'text-white font-medium bg-neutral-900/70'
-                        : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60'
+                        ? 'text-text-primary font-medium bg-surface-2'
+                        : 'text-text-secondary hover:text-text-primary hover:bg-surface-2'
                     )}
                   >
                     <div className="w-4 h-4 flex items-center justify-center shrink-0">
@@ -220,7 +220,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
       {/* Bottom actions: Settings & Log out */}
       <div
         className={cn(
-          'border-t border-neutral-800/80 py-3 space-y-0.5 shrink-0',
+          'border-t border-border-default py-3 space-y-0.5 shrink-0',
           isCollapsed ? 'px-2' : 'px-3'
         )}
       >
@@ -228,7 +228,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
           href="/dashboard"
           title={isCollapsed ? 'Settings' : undefined}
           className={cn(
-            'flex items-center py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60 transition-colors',
+            'flex items-center py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors',
             isCollapsed ? 'justify-center px-2' : 'justify-start px-3 gap-3'
           )}
         >
@@ -247,7 +247,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
           href="/"
           title={isCollapsed ? 'Log out' : undefined}
           className={cn(
-            'w-full flex items-center py-2 rounded-lg text-sm text-neutral-400 hover:text-neutral-200 hover:bg-neutral-900/60 transition-colors cursor-pointer',
+            'w-full flex items-center py-2 rounded-lg text-sm text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer',
             isCollapsed ? 'justify-center px-2' : 'justify-start px-3 gap-3'
           )}
         >

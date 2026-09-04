@@ -3,11 +3,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Clock } from 'lucide-react';
 import TopicGroupSection from '@/components/TopicGroupSection';
-import { isTopicComplete } from '@/lib/progressStore';
+import { useCompletedTopicIds, useIsTopicComplete } from '@/lib/progressStore';
 import { cn } from '@/lib/utils';
 import type { DifficultyLevel, CurriculumStatus, CurriculumPriority } from '@/types';
 import { CURRICULUM_DOMAINS } from '@/data/curriculum';
@@ -116,10 +116,7 @@ interface TopicRowItemProps {
 }
 
 function TopicRowItem({ topic }: TopicRowItemProps) {
-  const [isComplete] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isTopicComplete(topic.id);
-  });
+  const isComplete = useIsTopicComplete(topic.id);
 
   const isAvailable = topic.status === 'available';
   const progress = isComplete ? 100 : topic.defaultProgress;
@@ -251,6 +248,9 @@ export default function TopicGroupList({
   selectedCategory = 'All',
   className,
 }: TopicGroupListProps) {
+  const completedTopicIds = useCompletedTopicIds();
+  const completedSet = useMemo(() => new Set(completedTopicIds), [completedTopicIds]);
+
   const filteredGroups = TOPIC_GROUPS.filter((group) => {
     if (selectedCategory === 'All') return true;
     const catLower = selectedCategory.toLowerCase();
@@ -263,10 +263,9 @@ export default function TopicGroupList({
   return (
     <div className={cn('space-y-4', className)}>
       {filteredGroups.map((group) => {
-        const completedCount = group.topics.filter((t) => {
-          if (typeof window === 'undefined') return t.defaultProgress === 100;
-          return isTopicComplete(t.id) || t.defaultProgress === 100;
-        }).length;
+        const completedCount = group.topics.filter(
+          (t) => completedSet.has(t.id) || t.defaultProgress === 100
+        ).length;
 
         return (
           <TopicGroupSection

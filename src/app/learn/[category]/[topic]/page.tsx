@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Clock, CheckCircle2, MessageSquare, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
@@ -14,7 +14,7 @@ import { ArticleTOCDesktop, ArticleTOCMobile } from '@/components/learn/ArticleT
 import { PreviousNext } from '@/components/learn/PreviousNext';
 import { topicRepository, categoryMeta } from '@/data/topics/index';
 import { CURRICULUM_TOPICS, CURRICULUM_DOMAINS } from '@/data/curriculum';
-import { markTopicComplete, isTopicComplete } from '@/lib/progressStore';
+import { markTopicComplete, useIsTopicComplete } from '@/lib/progressStore';
 
 interface TopicPageProps {
   params: Promise<{ category: string; topic: string }>;
@@ -41,16 +41,11 @@ export default function TopicPage({ params }: TopicPageProps) {
 
   const categoryLabel = meta ? ('label' in meta ? meta.label : meta.shortTitle) : category;
 
-  // Lazy init from localStorage — avoids effect-triggered cascading renders
   const topicId = artTopic?.id ?? curriculumTopic?.id ?? '';
-  const [completed, setCompleted] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isTopicComplete(topicId);
-  });
+  const completed = useIsTopicComplete(topicId);
 
   const handleMarkComplete = () => {
     markTopicComplete(topicId);
-    setCompleted(true);
   };
 
   // If detailed article exists, render full article experience

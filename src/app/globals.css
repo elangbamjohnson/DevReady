@@ -85,23 +85,54 @@
 /* ─── Light Mode ──────────────────────────────────────────────────────────── */
 
 [data-theme="light"] {
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-muted: rgba(79, 70, 229, 0.08);
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-muted: rgba(124, 58, 237, 0.08);
 
-  --surface-0: #ffffff;
-  --surface-1: #f9fafb;
-  --surface-2: #f3f4f6;
-  --surface-3: #e5e7eb;
+  --surface-0: #fafafa;
+  --surface-1: #ffffff;
+  --surface-2: #f4f4f5;
+  --surface-3: #e4e4e7;
 
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
-  --text-tertiary: #9ca3af;
+  --text-primary: #18181b;
+  --text-secondary: #52525b;
+  --text-tertiary: #a1a1aa;
 
-  --border-default: #e5e7eb;
-  --border-subtle: #f3f4f6;
+  --border-default: #e4e4e7;
+  --border-subtle: #f4f4f5;
 
   color-scheme: light;
+}
+
+/* ─── Light Mode Utility Adaptations ─────────────────────────────────────── */
+
+[data-theme="light"] .bg-\[\#09090b\],
+[data-theme="light"] .bg-\[\#0A0A0A\],
+[data-theme="light"] .bg-\[\#09090B\] {
+  background-color: var(--surface-0);
+}
+
+[data-theme="light"] .bg-\[\#141414\],
+[data-theme="light"] .bg-\[\#18181b\],
+[data-theme="light"] .bg-\[\#181818\],
+[data-theme="light"] .bg-\[\#1A1A1A\] {
+  background-color: var(--surface-1);
+}
+
+[data-theme="light"] .border-neutral-800,
+[data-theme="light"] .border-neutral-800\/80,
+[data-theme="light"] .border-neutral-800\/60,
+[data-theme="light"] .border-neutral-700,
+[data-theme="light"] .border-neutral-700\/60,
+[data-theme="light"] .border-neutral-700\/80 {
+  border-color: var(--border-default);
+}
+
+[data-theme="light"] h1,
+[data-theme="light"] h2,
+[data-theme="light"] h3,
+[data-theme="light"] h4 {
+  color: var(--text-primary);
 }
 
 /* ─── Base Styles ─────────────────────────────────────────────────────────── */

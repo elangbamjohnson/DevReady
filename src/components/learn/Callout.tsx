@@ -61,9 +61,9 @@ const config: Record<CalloutVariant, {
   },
 };
 
-// Inline `code` parser for callout content
-function FormattedContent({ content }: { content: string }) {
-  const parts = content.split(/(`[^`]+`)/g);
+// Inline formatter for callout content (handles inline code and bold)
+function FormattedInline({ text }: { text: string }) {
+  const parts = text.split(/(`[^`]+`)/g);
   return (
     <>
       {parts.map((part, i) => {
@@ -74,9 +74,57 @@ function FormattedContent({ content }: { content: string }) {
             </code>
           );
         }
-        return <span key={i}>{part}</span>;
+        const boldParts = part.split(/(\*\*[^*]+\*\*)/g);
+        return (
+          <span key={i}>
+            {boldParts.map((bp, j) => {
+              if (bp.startsWith('**') && bp.endsWith('**')) {
+                return (
+                  <strong key={j} className="font-semibold text-text-primary">
+                    {bp.slice(2, -2)}
+                  </strong>
+                );
+              }
+              return bp;
+            })}
+          </span>
+        );
       })}
     </>
+  );
+}
+
+function FormattedContent({ content }: { content: string }) {
+  const sections = content.split(/(```[\s\S]*?```)/g);
+
+  return (
+    <div className="space-y-2.5">
+      {sections.map((section, sIdx) => {
+        if (section.startsWith('```') && section.endsWith('```')) {
+          const lines = section.slice(3, -3).trim().split('\n');
+          const codeLines = (lines[0] === 'swift' || lines[0] === 'objc') ? lines.slice(1) : lines;
+          return (
+            <pre
+              key={sIdx}
+              className="p-3 my-2 rounded-lg bg-surface-2/80 border border-border-subtle font-mono text-xs text-text-primary overflow-x-auto"
+            >
+              <code>{codeLines.join('\n')}</code>
+            </pre>
+          );
+        }
+
+        const paragraphs = section.split('\n\n').filter((p) => p.trim().length > 0);
+        return (
+          <div key={sIdx} className="space-y-2">
+            {paragraphs.map((p, pIdx) => (
+              <p key={pIdx} className="text-sm text-text-secondary leading-relaxed">
+                <FormattedInline text={p} />
+              </p>
+            ))}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -92,12 +140,10 @@ export function Callout({ variant, title, content, className }: CalloutProps) {
       <div className="flex gap-3">
         <Icon className={cn('w-4 h-4 mt-0.5 shrink-0', iconColor)} aria-hidden="true" />
         <div className="flex-1 min-w-0">
-          <p className={cn('text-xs font-semibold uppercase tracking-wider mb-1', labelColor)}>
+          <p className={cn('text-xs font-semibold uppercase tracking-wider mb-1.5', labelColor)}>
             {label}
           </p>
-          <p className="text-sm text-text-secondary leading-relaxed">
-            <FormattedContent content={content} />
-          </p>
+          <FormattedContent content={content} />
         </div>
       </div>
     </aside>

@@ -49,7 +49,7 @@ export default function TopicGroupSection({
             >
               {categoryLabel}
             </span>
-            <span className="text-sm text-neutral-500 font-mono">
+            <span className="text-sm text-neutral-500 font-mono" suppressHydrationWarning>
               {completedCount}/{totalCount} completed
             </span>
           </div>
