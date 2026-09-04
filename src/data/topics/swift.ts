@@ -2463,7 +2463,7 @@ print("User: \\(user)")  // Prints: User: Alice <alice@example.com>`,
       },
     ],
     previousTopic: 'swift-strings',
-    nextTopic: 'swift-structs-vs-classes',
+    nextTopic: 'swift-enums',
     content: [
       {
         type: 'quickAnswer',
@@ -3002,6 +3002,420 @@ func process(_ animal: any Animal) { ... }`,
         ],
       },
       { type: 'relatedTopics', id: 'related', topicIds: ['swift-protocols'] },
+    ],
+  },
+
+  // ─── Enums, Raw Values & Associated Values ────────────────────────────────
+  {
+    id: 'swift-enums',
+    slug: 'enums-and-associated-values',
+    title: 'Enums, Raw Values & Associated Values',
+    category: 'swift',
+    group: 'Core Object-Oriented & Value Types',
+    description: 'Algebraic data types, pattern matching, recursive enums with indirect, and CaseIterable — how Swift enums go far beyond a list of named constants.',
+    difficulty: 'intermediate',
+    estimatedTime: 30,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-04' },
+    interviewRelevance: 'high',
+    tags: ['enums', 'associated-values', 'algebraic-data-types', 'indirect', 'raw-values', 'caseiterable', 'pattern-matching'],
+    relatedTopics: ['swift-struct-vs-class', 'swift-error-handling', 'swift-control-flow'],
+    furtherReading: [
+      {
+        title: 'Enumerations — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/enumerations',
+        source: 'swift-org',
+      },
+      {
+        title: 'Optional — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/optional',
+        source: 'apple-developer',
+      },
+    ],
+    previousTopic: 'swift-error-handling',
+    nextTopic: 'swift-properties',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Swift enums are not just lists of named constants — they are **algebraic data types** that can carry data with each case. A **raw value** is a fixed underlying primitive (like `Int` or `String`) that every case maps to. An **associated value** is dynamic data you attach *at the call site*, so each instance of a case can carry different data. Pattern matching via `switch` is how you extract and respond to that data safely.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why enums in Swift are different',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: 'If you are coming from C, Java, or Objective-C, you probably think of enums as a thin wrapper around an integer — a way to give names to magic numbers. Swift enums are something fundamentally different. They are **first-class value types** that can have methods, computed properties, and — most powerfully — attach *data* to each case.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'This makes them **algebraic data types** in the computer science sense: you can model a value that is exactly one of several different shapes, each with its own associated payload. The Optional type you use every day (`Optional<Wrapped>`) is just an enum under the hood — `case none` and `case some(Wrapped)`. `Result<Success, Failure>` is an enum. Every network response model you have ever written is *trying* to be one.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content: 'The reason this matters: when you model your data as an enum with associated values, the Swift compiler enforces that you handle every possible case — at compile time, not at runtime. You cannot accidentally forget a state. You cannot access the wrong branch. The exhaustive `switch` statement is how Swift turns enums into a correctness guarantee.',
+      },
+      {
+        type: 'heading',
+        id: 'h-basics',
+        level: 2,
+        content: 'Enum basics and exhaustive switching',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-basics-1',
+        content: 'A basic enum declares a type that can only be one of a fixed set of named cases. The `switch` statement over an enum is **exhaustive** — the compiler rejects code that does not cover every case (unless you add a `default` branch, which is usually a smell).',
+      },
+      {
+        type: 'code',
+        id: 'code-basics',
+        language: 'swift',
+        caption: 'Exhaustive switching — the compiler has your back',
+        content: `enum Direction {
+    case north, south, east, west
+}
+
+let heading = Direction.north
+
+// ✅ Exhaustive — compiler verifies all 4 cases are handled
+switch heading {
+case .north: print("Go north")
+case .south: print("Go south")
+case .east:  print("Go east")
+case .west:  print("Go west")
+}
+
+// ❌ This would be a compile error — missing .west
+// switch heading {
+// case .north: ...
+// case .south: ...
+// case .east:  ...
+// }   // Error: Switch must be exhaustive`,
+      },
+      {
+        type: 'callout',
+        id: 'c-exhaustive',
+        variant: 'tip',
+        title: 'Avoid default: when you can',
+        content: 'If your switch has a `default:` branch, the compiler can no longer warn you when you add a new enum case and forget to handle it. Prefer exhaustive switches — let the compiler catch missing cases for you. Save `default:` for when the enum is not yours (e.g., from an Apple SDK) and has too many cases to enumerate.',
+      },
+      {
+        type: 'heading',
+        id: 'h-raw-values',
+        level: 2,
+        content: 'Raw values',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-raw-1',
+        content: 'A **raw value** gives each case a fixed underlying primitive value — an `Int`, a `String`, or any other type that conforms to `RawRepresentable`. Raw values are constant and declared at compile time; they do not change per instance. This is useful when you need to serialize an enum to a database column, a JSON field, or a network protocol that uses numbers or strings.',
+      },
+      {
+        type: 'code',
+        id: 'code-raw-values',
+        language: 'swift',
+        caption: 'Int and String raw values, plus failable initializer',
+        content: `// Int raw values auto-increment from the starting value
+enum StatusCode: Int {
+    case ok          = 200
+    case notFound    = 404
+    case serverError = 500
+}
+
+let code = StatusCode.ok
+print(code.rawValue)   // 200
+
+// String raw values default to the case name if not specified
+enum Planet: String {
+    case mercury, venus, earth, mars
+}
+
+print(Planet.earth.rawValue)  // "earth"
+
+// Failable initializer from a raw value — returns Optional
+let planet = Planet(rawValue: "mars")  // Optional<Planet>.some(.mars)
+let unknown = Planet(rawValue: "pluto")  // nil — not in the enum`,
+      },
+      {
+        type: 'callout',
+        id: 'c-raw-vs-associated',
+        variant: 'important',
+        title: 'Raw values vs Associated values — mutually exclusive',
+        content: 'An enum can have **raw values** OR **associated values**, but not both at the same time. Raw values are fixed and uniform — every case has the same type of raw value. Associated values are dynamic and per-case — each case carries its own type and shape of data.',
+      },
+      {
+        type: 'heading',
+        id: 'h-associated-values',
+        level: 2,
+        content: 'Associated values — the powerful part',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-assoc-1',
+        content: 'Associated values let each case carry **different data** alongside it. This is what makes Swift enums algebraic data types. When you create an instance of a case with an associated value, you attach the data then. When you switch over it, you use pattern matching to extract that data safely.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-assoc-2',
+        content: 'The classic real-world example is a network result. Without enums, you might have a function that returns an optional response and an optional error — two variables, one of which is always nil. That is error-prone. With an enum, you model it correctly: a response is *either* a success with data *or* a failure with an error. Never both. Never neither.',
+      },
+      {
+        type: 'code',
+        id: 'code-associated-values',
+        language: 'swift',
+        caption: 'Associated values model states that carry different data',
+        content: `enum NetworkResult {
+    case success(data: Data, statusCode: Int)
+    case failure(error: Error)
+    case loading
+}
+
+func handle(_ result: NetworkResult) {
+    switch result {
+    case .success(let data, let code):
+        print("Got \\(data.count) bytes, status \\(code)")
+    case .failure(let error):
+        print("Failed: \\(error.localizedDescription)")
+    case .loading:
+        print("Still loading...")
+    }
+}
+
+// Each case carries exactly the data it needs — nothing more
+let response = NetworkResult.success(data: Data(), statusCode: 200)
+handle(response)`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-assoc-3',
+        content: 'Associated values also enable the `if case let` pattern — a shorthand for when you only care about one specific case without writing a full switch:',
+      },
+      {
+        type: 'code',
+        id: 'code-if-case-let',
+        language: 'swift',
+        caption: 'if case let — check and unwrap a specific case inline',
+        content: `enum AuthState {
+    case signedIn(userId: String)
+    case signedOut
+    case loading
+}
+
+let state = AuthState.signedIn(userId: "user-123")
+
+// Only handle .signedIn — ignore other cases
+if case .signedIn(let userId) = state {
+    print("Welcome back, \\(userId)")
+}
+
+// Guard variant — early exit if not signed in
+guard case .signedIn(let userId) = state else {
+    return  // not signed in, exit early
+}
+// userId is now available in scope here`,
+      },
+      {
+        type: 'heading',
+        id: 'h-caseiterable',
+        level: 2,
+        content: 'CaseIterable — iterating all cases',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-caseiterable-1',
+        content: '`CaseIterable` is a protocol that lets Swift automatically synthesize a static `allCases` collection containing every case in the enum. You just add the conformance — no extra implementation needed for enums without associated values. This is useful for building pickers, settings screens, test harnesses, or any place where you need to enumerate all possible values.',
+      },
+      {
+        type: 'code',
+        id: 'code-caseiterable',
+        language: 'swift',
+        caption: 'CaseIterable synthesizes allCases automatically',
+        content: `enum Weekday: String, CaseIterable {
+    case monday, tuesday, wednesday, thursday, friday, saturday, sunday
+}
+
+// Automatically synthesized — no extra code needed
+print(Weekday.allCases.count)  // 7
+
+for day in Weekday.allCases {
+    print(day.rawValue)  // monday, tuesday, ...
+}
+
+// Useful for building UI pickers
+let picker = Weekday.allCases.map { $0.rawValue.capitalized }
+// ["Monday", "Tuesday", "Wednesday", ...]`,
+      },
+      {
+        type: 'callout',
+        id: 'c-caseiterable-limit',
+        variant: 'info',
+        title: 'CaseIterable limitation',
+        content: 'Swift cannot automatically synthesize `CaseIterable` for enums with **associated values**, because there is no way to enumerate all possible payloads. You can still manually implement the `allCases` requirement for such enums if you need to, but you must list the cases yourself.',
+      },
+      {
+        type: 'heading',
+        id: 'h-methods-and-properties',
+        level: 2,
+        content: 'Methods and computed properties on enums',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-methods-1',
+        content: 'Swift enums are full value types. They can have computed properties, methods, and `mutating` methods — just like structs. This keeps logic grouped with the type it belongs to, rather than scattered across switch statements elsewhere in your codebase.',
+      },
+      {
+        type: 'code',
+        id: 'code-methods',
+        language: 'swift',
+        caption: 'Enums with computed properties and methods',
+        content: `enum Suit: String, CaseIterable {
+    case clubs, diamonds, hearts, spades
+
+    // Computed property — no stored state allowed in enums
+    var isRed: Bool {
+        self == .diamonds || self == .hearts
+    }
+
+    var symbol: String {
+        switch self {
+        case .clubs:    return "♣️"
+        case .diamonds: return "♦️"
+        case .hearts:   return "♥️"
+        case .spades:   return "♠️"
+        }
+    }
+}
+
+print(Suit.hearts.isRed)   // true
+print(Suit.clubs.symbol)   // ♣️`,
+      },
+      {
+        type: 'heading',
+        id: 'h-indirect',
+        level: 2,
+        content: 'Indirect enums — recursive types',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-indirect-1',
+        content: 'Normally, enums must have a fixed size at compile time. But a recursive enum — one where a case holds an instance of the same enum — would have an infinite size. Swift solves this with the `indirect` keyword, which tells the compiler to store that case on the heap as a reference (like a class), breaking the recursive size cycle.',
+      },
+      {
+        type: 'code',
+        id: 'code-indirect',
+        language: 'swift',
+        caption: 'indirect enum enables recursive data structures',
+        content: `// Modeling a simple expression tree (e.g., a calculator)
+indirect enum ArithmeticExpr {
+    case number(Double)
+    case add(ArithmeticExpr, ArithmeticExpr)
+    case multiply(ArithmeticExpr, ArithmeticExpr)
+}
+
+// Evaluate the expression recursively
+func evaluate(_ expr: ArithmeticExpr) -> Double {
+    switch expr {
+    case .number(let n):
+        return n
+    case .add(let left, let right):
+        return evaluate(left) + evaluate(right)
+    case .multiply(let left, let right):
+        return evaluate(left) * evaluate(right)
+    }
+}
+
+// Represents: (3 + 4) * 2
+let expr = ArithmeticExpr.multiply(
+    .add(.number(3), .number(4)),
+    .number(2)
+)
+
+print(evaluate(expr))  // 14.0`,
+      },
+      {
+        type: 'callout',
+        id: 'c-indirect-cost',
+        variant: 'warning',
+        title: 'indirect has a heap allocation cost',
+        content: 'Because `indirect` cases are heap-allocated (like class references), they bypass the usual stack-based value semantics. The enum itself is still a value type, but its `indirect` cases carry a reference internally. This is intentional and often acceptable — recursive data structures are inherently not stack-friendly — but it is worth knowing so you are not surprised by the ARC overhead.',
+      },
+      {
+        type: 'heading',
+        id: 'h-optional-is-enum',
+        level: 2,
+        content: 'Optional is just an enum',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-optional-1',
+        content: 'One of the best ways to internalize Swift enums is to see that `Optional<Wrapped>` — the `?` type you use constantly — is just an enum in the standard library. It has exactly two cases: `none` (no value) and `some(Wrapped)` (a value). All the optional syntax (`if let`, `?`, `??`) is syntax sugar built on top of this simple enum.',
+      },
+      {
+        type: 'code',
+        id: 'code-optional-enum',
+        language: 'swift',
+        caption: 'Optional<T> is defined as an enum in the Swift standard library',
+        content: `// This is essentially how Optional is defined in Swift's stdlib:
+// enum Optional<Wrapped> {
+//     case none
+//     case some(Wrapped)
+// }
+
+// These two lines are equivalent:
+let a: String? = "hello"
+let b: Optional<String> = .some("hello")
+
+// switch on Optional — no magic, just pattern matching
+let name: String? = "Alice"
+switch name {
+case .none:
+    print("No name provided")
+case .some(let value):
+    print("Hello, \\(value)")  // "Hello, Alice"
+}
+
+// if let is just sugar for switch case .some(let value)
+if let value = name {
+    print("Hello, \\(value)")
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Confusing **raw values** (compile-time constants, same type per case) with **associated values** (runtime data, different types per case) — they are fundamentally different features and an enum cannot have both.',
+          'Using `default:` in a switch over your own enums — this silently hides missing cases when you add a new one later. Always be exhaustive when you own the enum type.',
+          'Forgetting that `CaseIterable` cannot be automatically synthesized for enums with associated values — Swift has no way to enumerate all possible payloads.',
+          'Trying to compare two enum cases with associated values using `==` without conforming to `Equatable` — associated value enums are not automatically `Equatable` (unlike raw value enums, which are).',
+          'Forgetting `indirect` on recursive enum cases — the compiler will tell you, but understanding *why* is important for interviews.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'What is the difference between raw values and associated values in a Swift enum?',
+          'How does Swift enforce exhaustiveness in a switch statement over an enum?',
+          'Why is Optional<T> considered an enum in Swift? What are its two cases?',
+          'When would you use `indirect` on an enum, and what problem does it solve?',
+          'Can an enum conform to both CaseIterable and have associated values?',
+        ],
+      },
+      { type: 'relatedTopics', id: 'related', topicIds: ['swift-struct-vs-class', 'swift-error-handling', 'swift-control-flow'] },
     ],
   },
 ];
