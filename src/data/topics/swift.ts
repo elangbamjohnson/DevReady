@@ -16,6 +16,13 @@ export const swiftTopics: ArticleTopic[] = [
     interviewRelevance: 'high',
     tags: ['variables', 'types', 'type-inference', 'let', 'var'],
     relatedTopics: ['swift-optionals', 'swift-control-flow', 'swift-functions'],
+    furtherReading: [
+      {
+        title: 'The Basics — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/thebasics',
+        source: 'swift-org',
+      },
+    ],
     nextTopic: 'swift-optionals',
     content: [
       {
@@ -190,6 +197,18 @@ struct StrongUserID {
     interviewRelevance: 'medium',
     tags: ['optionals', 'safety', 'nil', 'guard', 'if-let'],
     relatedTopics: ['swift-closures', 'swift-protocols'],
+    furtherReading: [
+      {
+        title: 'Optional — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/optional',
+        source: 'apple-developer',
+      },
+      {
+        title: 'The Basics (Optionals section) — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/thebasics',
+        source: 'swift-org',
+      },
+    ],
     nextTopic: 'swift-struct-vs-class',
     content: [
       {
@@ -342,6 +361,13 @@ if let name {
     interviewRelevance: 'high',
     tags: ['struct', 'class', 'value-semantics', 'reference-semantics', 'copy-on-write'],
     relatedTopics: ['swift-optionals', 'swift-protocols', 'memory-arc'],
+    furtherReading: [
+      {
+        title: 'Structures and Classes — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/classesandstructures/',
+        source: 'swift-org',
+      },
+    ],
     previousTopic: 'swift-optionals',
     nextTopic: 'swift-closures',
     content: [
@@ -556,6 +582,13 @@ You don't need to implement CoW for simple structs — just use them naturally. 
     interviewRelevance: 'high',
     tags: ['closures', 'capture-list', 'weak-self', 'escaping', 'trailing-closure'],
     relatedTopics: ['swift-struct-vs-class', 'memory-retain-cycles', 'memory-arc'],
+    furtherReading: [
+      {
+        title: 'Closures — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/closures',
+        source: 'swift-org',
+      },
+    ],
     previousTopic: 'swift-struct-vs-class',
     nextTopic: 'swift-control-flow',
     content: [
@@ -906,6 +939,13 @@ logIfDebug("expensive computation")  // No braces needed
     interviewRelevance: 'high',
     tags: ['control-flow', 'switch', 'pattern-matching', 'guard', 'conditionals', 'loops'],
     relatedTopics: ['swift-optionals', 'swift-closures', 'swift-enums'],
+    furtherReading: [
+      {
+        title: 'Control Flow — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/controlflow',
+        source: 'swift-org',
+      },
+    ],
     previousTopic: 'swift-closures',
     nextTopic: 'swift-functions',
     content: [
@@ -1353,6 +1393,13 @@ repeat {
     interviewRelevance: 'high',
     tags: ['functions', 'inout', 'parameters', 'signatures', 'argument-labels'],
     relatedTopics: ['swift-closures', 'swift-control-flow', 'swift-generics'],
+    furtherReading: [
+      {
+        title: 'Functions — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/functions',
+        source: 'swift-org',
+      },
+    ],
     previousTopic: 'swift-control-flow',
     nextTopic: 'swift-collections',
     content: [
@@ -1756,6 +1803,18 @@ print(q, r)  // 3 2`,
     interviewRelevance: 'high',
     tags: ['collections', 'array', 'set', 'dictionary', 'hashable', 'value-semantics'],
     relatedTopics: ['swift-struct-vs-class', 'swift-generics', 'swift-protocols'],
+    furtherReading: [
+      {
+        title: 'Collection Types — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/collectiontypes',
+        source: 'swift-org',
+      },
+      {
+        title: 'Hashable — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/hashable',
+        source: 'apple-developer',
+      },
+    ],
     previousTopic: 'swift-functions',
     nextTopic: 'swift-strings',
     content: [
@@ -2049,6 +2108,328 @@ userSet.contains(User(id: 1, name: "Alice"))  // true (equal by ID)`,
         type: 'relatedTopics',
         id: 'related',
         topicIds: ['swift-struct-vs-class', 'swift-generics', 'swift-protocols'],
+      },
+    ],
+  },
+
+  // ─── Strings, Characters & Substrings ──────────────────────────────────────
+  {
+    id: 'swift-strings',
+    slug: 'strings-and-characters',
+    title: 'Strings, Characters & Substrings',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description:
+      'Unicode, grapheme clusters, String indices, Substring memory safety, and why String is more complex than it appears.',
+    difficulty: 'intermediate',
+    estimatedTime: 25,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'medium',
+    tags: ['strings', 'substring', 'unicode', 'grapheme-clusters', 'indices', 'memory'],
+    relatedTopics: ['swift-optionals', 'swift-protocols', 'swift-collections'],
+    furtherReading: [
+      {
+        title: 'Strings and Characters — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/stringsandcharacters',
+        source: 'swift-org',
+      },
+      {
+        title: 'Substring — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/substring',
+        source: 'apple-developer',
+      },
+    ],
+    previousTopic: 'swift-collections',
+    nextTopic: 'swift-error-handling',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'Swift Strings are Unicode-correct but complex. A String is a collection of extended grapheme clusters (visual characters, not code points). String doesn\'t support integer indexing — you use String.Index and methods like `index(_:offsetBy:)`. A Substring shares the parent String\'s buffer to save memory until converted to a String, but retaining a Substring keeps the entire parent String in memory — a hidden memory trap. For most code, treat Strings as opaque — for performance-critical code, understand the underlying complexity.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'Strings seem simple — they\'re just text, right? But Swift\'s String type is deceptively complex because it handles Unicode correctly. Most languages treat strings as sequences of bytes or 16-bit code units, which works fine for English but breaks for emoji, accented characters, or scripts like Arabic or Devanagari.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content:
+          'Swift\'s approach: a String is a collection of extended grapheme clusters — the Unicode term for "a visual character." An emoji might be 1 grapheme cluster but 4+ bytes. An accented character like "é" might be 1 grapheme cluster but 2 Unicode scalars.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content:
+          'This correctness comes at a cost: you can\'t subscript a String by integer. `string[0]` doesn\'t work; you have to use `string.startIndex` and navigate from there. And Substring — a view into part of a String — is a memory trap if you\'re not careful.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-4',
+        content:
+          'Understanding Strings means understanding Unicode, grapheme clusters, and how Substring retains entire parent buffers. It\'s intermediate stuff, but it\'s important once you hit it in production.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'heading',
+        id: 'h-unicode',
+        level: 3,
+        content: 'Unicode and grapheme clusters',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-unicode-1',
+        content:
+          'A String in Swift is a collection of **extended grapheme clusters**. Here\'s the hierarchy:',
+      },
+      {
+        type: 'list',
+        id: 'l-unicode-hierarchy',
+        ordered: false,
+        items: [
+          '**Unicode Scalar**: A single 32-bit Unicode code point (e.g., U+0041 for "A")',
+          '**Extended Grapheme Cluster**: One or more Unicode scalars that combine to form a single user-perceived character',
+          '**String**: A collection of grapheme clusters',
+        ],
+      },
+      {
+        type: 'paragraph',
+        id: 'p-unicode-examples',
+        content: 'Examples:',
+      },
+      {
+        type: 'code',
+        id: 'code-unicode-examples',
+        language: 'swift',
+        content: `let hello = "Hello"
+print(hello.count)  // 5 grapheme clusters
+
+let emoji = "👨‍👩‍👧"  // Family emoji
+print(emoji.count)  // 1 grapheme cluster (but composed of 7 Unicode scalars!)
+
+let accented = "café"
+print(accented.count)  // 4 grapheme clusters
+// The "é" is 1 cluster (though it can be 1 or 2 scalars depending on representation)
+
+// Access Unicode scalars if you really need them
+for scalar in "A".unicodeScalars {
+    print(scalar)  // U+0041
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-unicode-count-cost',
+        content:
+          'Why does this matter? Because **String.count is O(n)** — it has to walk through the entire string counting grapheme clusters, not just checking the byte length. Never use count in a tight loop for performance-critical code. And when processing text from the web or files, remember that what looks like one character might be multiple scalars.',
+      },
+      {
+        type: 'heading',
+        id: 'h-string-indices',
+        level: 3,
+        content: 'String indices — why you can\'t use integers',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-indices-1',
+        content:
+          'Swift Strings don\'t support integer subscripting because grapheme clusters have variable byte lengths. `string[0]` doesn\'t make sense — the runtime would have to count clusters to find the 0th character, which is inefficient.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-indices-2',
+        content: 'Instead, use **String.Index**:',
+      },
+      {
+        type: 'code',
+        id: 'code-indices-example',
+        language: 'swift',
+        content: `let name = "Alice"
+
+// You can't do this
+// print(name[0])  // Compile error
+
+// You do this
+let firstIndex = name.startIndex
+print(name[firstIndex])  // "A"
+
+// Navigate with offsetBy or indices
+let secondIndex = name.index(after: firstIndex)
+print(name[secondIndex])  // "l"
+
+// Or use offset
+let thirdIndex = name.index(firstIndex, offsetBy: 2)
+print(name[thirdIndex])  // "i"
+
+// Iterate safely
+for (index, char) in name.enumerated() {
+    // enumerated() gives you Int indices and Characters
+    print("\\(index): \\(char)")
+}
+
+// Use range subscripting
+let startIdx = name.index(firstIndex, offsetBy: 1)
+let endIdx = name.index(startIdx, offsetBy: 2)
+let substring = name[startIdx..<endIdx]  // "li"`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-indices-summary',
+        content:
+          'This design is inconvenient but safe — you can\'t accidentally access out-of-bounds because you have to navigate through valid indices.',
+      },
+      {
+        type: 'heading',
+        id: 'h-substring',
+        level: 3,
+        content: 'Substring — the memory trap',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-substring-1',
+        content:
+          'A **Substring** is a lightweight view into a String\'s buffer, created by slicing:',
+      },
+      {
+        type: 'code',
+        id: 'code-substring-basic',
+        language: 'swift',
+        content: `let message = "Hello, World!"
+let greeting = message[..<message.index(message.startIndex, offsetBy: 5)]
+// greeting is a Substring ("Hello"), not a String
+
+print(type(of: greeting))  // Substring`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-substring-trap',
+        content:
+          'Substring shares the parent String\'s buffer — no copy is made. This is memory-efficient... until it becomes a problem:',
+      },
+      {
+        type: 'code',
+        id: 'code-substring-trap',
+        language: 'swift',
+        content: `let largeString = String(repeating: "x", count: 1_000_000)
+let tiny = largeString[..<largeString.index(largeString.startIndex, offsetBy: 5)]
+// tiny is just "xxxxx" (Substring)
+// BUT: tiny retains the entire 1MB largeString in memory!
+
+// Solution: convert to String to release the parent buffer
+let owned = String(tiny)  // Now owns its own buffer, largeString can be deallocated`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-substring-leak-summary',
+        content:
+          'This is a classic memory leak in Swift: you slice a huge string for a small piece, think you\'re being efficient, and accidentally keep the entire parent in memory.',
+      },
+      {
+        type: 'heading',
+        id: 'h-interpolation',
+        level: 3,
+        content: 'String interpolation and CustomStringConvertible',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-interpolation-1',
+        content: 'String interpolation makes it easy to build strings:',
+      },
+      {
+        type: 'code',
+        id: 'code-interpolation-example',
+        language: 'swift',
+        content: `let name = "Alice"
+let age = 30
+let message = "My name is \\(name) and I'm \\(age) years old"
+
+// You can customize how types appear in interpolation
+struct User {
+    let name: String
+    let email: String
+    
+    var description: String {
+        "\\(name) <\\(email)>"
+    }
+}
+
+let user = User(name: "Alice", email: "alice@example.com")
+print("User: \\(user)")  // Prints: User: Alice <alice@example.com>`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-interpolation-summary',
+        content:
+          'If a type conforms to **CustomStringConvertible**, it provides a custom `description` property used in string interpolation and `String(describing:)`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Assuming String supports integer subscripting — it doesn\'t. Always use String.Index.',
+          'Using String.count in a loop or performance-critical code — it\'s O(n). Cache it if needed.',
+          'Holding onto a Substring thinking you\'re saving memory — you\'re retaining the parent String until the Substring is deallocated or converted to a String.',
+          'Comparing String and Substring inconsistently — they conform to different protocols. Convert to String for consistency.',
+          'Forgetting that emoji and accented characters are single grapheme clusters — String.count reflects visual characters, not bytes.',
+          'Using `unicodeScalars` when you meant `characters` — they\'re different views of the same data.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'l-when-to-use',
+        ordered: false,
+        items: [
+          'Use **String** for all normal text handling. It\'s correct, safe, and handles Unicode properly.',
+          'Use **Substring** temporarily when slicing — but convert to String if you\'re storing it long-term.',
+          'Use **String.Index** for navigation — it\'s the only safe way to traverse Strings.',
+          'Use **unicodeScalars** only if you genuinely need individual Unicode code points (rare).',
+          'Use **CustomStringConvertible** to customize how your types appear in strings and interpolation.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'medium',
+        questions: [
+          'Why doesn\'t Swift String support integer subscripting like String[0], and what should you use instead?',
+          'What is an \'extended grapheme cluster\', and why is String.count O(n)?',
+          'What\'s the problem with this code, and why does retaining a Substring keep the parent String in memory?',
+          'What does this print, and why? (Emoji count across graphemes, scalars, and UTF-16)',
+          'What\'s the difference between String and Substring, and when should you convert Substring to String?',
+          'How does String.Index work, and what methods do you use to navigate a String?',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-optionals', 'swift-protocols', 'swift-collections'],
       },
     ],
   },

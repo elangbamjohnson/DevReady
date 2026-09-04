@@ -207,6 +207,18 @@ export interface RelatedTopicsBlock {
   topicIds: string[];
 }
 
+export interface FurtherReadingItem {
+  title: string;   // e.g. "Optional — Swift Standard Library"
+  url: string;
+  source: 'apple-developer' | 'swift-org';  // for icon/badge differentiation
+}
+
+export interface FurtherReadingBlock {
+  type: 'furtherReading';
+  id: string;
+  items: FurtherReadingItem[];
+}
+
 export interface DividerBlock {
   type: 'divider';
   id: string;
@@ -223,6 +235,7 @@ export type ContentBlock =
   | QuickAnswerBlock
   | InterviewBlock
   | RelatedTopicsBlock
+  | FurtherReadingBlock
   | DividerBlock;
 
 // ─── Article Topic (Phase 2 full topic) ──────────────────────────────────────
@@ -242,6 +255,7 @@ export interface ArticleTopic {
   tags: string[];
   content: ContentBlock[];
   relatedTopics: string[];    // topic IDs
+  furtherReading?: FurtherReadingItem[];
   previousTopic?: string;     // topic ID
   nextTopic?: string;         // topic ID
 }
@@ -258,6 +272,7 @@ export interface Topic {
   readTimeMinutes: number;
   completionStatus: CompletionStatus;
   tags: string[];
+  furtherReading?: FurtherReadingItem[];
   updatedVersion?: string;
 }
 

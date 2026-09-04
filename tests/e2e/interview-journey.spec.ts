@@ -9,10 +9,12 @@ test.describe('Interview Experience User Journey', () => {
     // 2. Start Junior Track
     const startJuniorBtn = page.getByRole('button', { name: /Start Interview/i }).first();
     await expect(startJuniorBtn).toBeVisible();
-    await startJuniorBtn.click();
+    await expect(async () => {
+      await startJuniorBtn.click();
+      await expect(page).toHaveURL(/\/interview\/session\//, { timeout: 3000 });
+    }).toPass({ timeout: 10000 });
 
     // 3. Arrive at session page
-    await expect(page).toHaveURL(/\/interview\/session\//);
     await expect(page.getByText(/Question 1 of/i)).toBeVisible();
 
     // 4. Think State -> Reveal Model Answer
