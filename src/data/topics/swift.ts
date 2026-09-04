@@ -1740,6 +1740,319 @@ print(q, r)  // 3 2`,
     ],
   },
 
+  // ─── Arrays, Sets & Dictionaries ───────────────────────────────────────────
+  {
+    id: 'swift-collections',
+    slug: 'collections',
+    title: 'Arrays, Sets & Dictionaries',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description:
+      'Array, Set, and Dictionary types — ordered vs unordered, hashable requirements, memory characteristics, and when to use each collection in real code.',
+    difficulty: 'foundational',
+    estimatedTime: 30,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'high',
+    tags: ['collections', 'array', 'set', 'dictionary', 'hashable', 'value-semantics'],
+    relatedTopics: ['swift-struct-vs-class', 'swift-generics', 'swift-protocols'],
+    previousTopic: 'swift-functions',
+    nextTopic: 'swift-strings',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'Swift provides three main collection types. **Array** is ordered, allows duplicates, and is the default for most situations. **Set** is unordered but guarantees uniqueness — useful for membership checking. **Dictionary** stores key-value pairs and provides O(1) lookup by key. All three are value types with copy-on-write optimization. Sets and Dictionaries require their elements to conform to `Hashable`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'Collections are how you organize and access multiple values. Most languages have arrays and hash maps (dictionaries), but Swift\'s approach stands out: all three collection types are value types, not reference types. This means they\'re thread-safe by default and have predictable copy behavior.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content:
+          'Also, Swift forces you to think about what you\'re actually modeling. Need to store unique usernames? That\'s a Set, not an Array with duplicate-checking code scattered everywhere. Need fast lookups by ID? That\'s a Dictionary, not a loop over an Array. The compiler can\'t force the right choice, but the language design nudges you toward it.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content:
+          'Finally, **Hashable** is a protocol that Collections depend on. Understanding it helps you write collection-friendly types and debug "does not conform to Hashable" errors.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'heading',
+        id: 'h-arrays',
+        level: 3,
+        content: 'Arrays — ordered, mutable, copy-on-write',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-arrays-1',
+        content:
+          'An Array is an ordered collection of elements of the same type. Elements are accessed by index, starting at 0.',
+      },
+      {
+        type: 'code',
+        id: 'code-arrays-basic',
+        language: 'swift',
+        content: `var fruits = ["Apple", "Banana", "Cherry"]
+
+// Access by index
+print(fruits[0])  // "Apple"
+
+// Iterate
+for fruit in fruits {
+    print(fruit)
+}
+
+// Mutate
+fruits.append("Date")
+fruits[1] = "Blueberry"
+
+// Common operations
+fruits.count        // 4
+fruits.isEmpty      // false
+fruits.contains("Apple")  // true
+fruits.remove(at: 0)  // returns "Apple", array is now ["Blueberry", "Cherry", "Date"]`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-cow-explanation',
+        content:
+          '**Copy-on-Write optimization:** When you assign an Array to another variable, Swift doesn\'t immediately copy all the elements. Instead, they share the same underlying buffer. Only when one of them is mutated does Swift make a copy. This makes Arrays both efficient (no unnecessary copying) and safe (mutations don\'t affect other variables).',
+      },
+      {
+        type: 'code',
+        id: 'code-cow-example',
+        language: 'swift',
+        content: `var a = [1, 2, 3]
+var b = a        // b shares the same buffer as a (no copy yet)
+b.append(4)      // Now Swift copies the buffer for b, then appends
+// a is still [1, 2, 3]; b is [1, 2, 3, 4]`,
+      },
+      {
+        type: 'heading',
+        id: 'h-sets',
+        level: 3,
+        content: 'Sets — unordered, unique elements, Hashable',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-sets-1',
+        content:
+          'A Set is an unordered collection of unique values. Each element must conform to `Hashable`.',
+      },
+      {
+        type: 'code',
+        id: 'code-sets-example',
+        language: 'swift',
+        content: `var colors: Set<String> = ["Red", "Blue", "Green"]
+
+// Order is not guaranteed
+for color in colors {
+    print(color)  // May print in any order
+}
+
+// Membership checking is fast (O(1))
+colors.contains("Red")  // true
+
+// Uniqueness is enforced
+colors.insert("Blue")  // No effect — "Blue" already exists
+colors.insert("Yellow")  // Added
+
+// Set operations (unique to Sets)
+let a: Set = [1, 2, 3]
+let b: Set = [2, 3, 4]
+a.union(b)         // [1, 2, 3, 4]
+a.intersection(b)  // [2, 3]
+a.symmetricDifference(b)  // [1, 4]
+a.subtracting(b)   // [1]`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-sets-hashable-reason',
+        content:
+          'The reason Sets require `Hashable` is performance: hash tables are O(1) average case for lookup and insertion. Without a hash function, Sets would have to use a different algorithm (like a balanced tree) which is slower.',
+      },
+      {
+        type: 'heading',
+        id: 'h-dictionaries',
+        level: 3,
+        content: 'Dictionaries — key-value pairs, Hashable keys, optional lookup',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-dictionaries-1',
+        content:
+          'A Dictionary stores key-value pairs. Keys must be `Hashable`; values can be any type.',
+      },
+      {
+        type: 'code',
+        id: 'code-dictionaries-example',
+        language: 'swift',
+        content: `var scores: [String: Int] = ["Alice": 95, "Bob": 87]
+
+// Access by key
+scores["Alice"]  // Optional<95>
+
+// Safe access — Dictionary returns optional because key might not exist
+if let aliceScore = scores["Alice"] {
+    print("Alice scored \\(aliceScore)")
+}
+
+// Provide a default if key is missing
+let bobScore = scores["Bob", default: 0]  // 87
+let charlieScore = scores["Charlie", default: 0]  // 0 (not in dict)
+
+// Mutate
+scores["Alice"] = 96
+scores["Charlie"] = 92
+
+// Iterate
+for (name, score) in scores {
+    print("\\(name): \\(score)")
+}
+
+// Remove
+scores.removeValue(forKey: "Bob")  // returns Optional<87>`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-dictionaries-optional-reason',
+        content:
+          'Dictionary lookup returns an optional because the key might not exist. This forces you to handle the missing case explicitly — no silent bugs from accessing a key that doesn\'t exist.',
+      },
+      {
+        type: 'heading',
+        id: 'h-hashable-protocol',
+        level: 3,
+        content: 'The Hashable protocol',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-hashable-1',
+        content:
+          '`Hashable` is a protocol that allows a type to be used as a Set element or Dictionary key. It requires conformance to `Equatable` (implementing `==`) and provides a `hash(into:)` method.',
+      },
+      {
+        type: 'code',
+        id: 'code-hashable-custom',
+        language: 'swift',
+        content: `struct User: Hashable {
+    let id: Int
+    let name: String
+    
+    // Equatable requirement
+    static func == (lhs: User, rhs: User) -> Bool {
+        lhs.id == rhs.id  // Users are equal if their IDs match
+    }
+    
+    // Hashable requirement
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)  // Hash based on ID
+    }
+}
+
+var userSet: Set<User> = [
+    User(id: 1, name: "Alice"),
+    User(id: 2, name: "Bob")
+]
+
+userSet.contains(User(id: 1, name: "Alice"))  // true (equal by ID)`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-hashable-synthesized',
+        content:
+          'For structs with simple value properties, you can just add `Hashable` conformance and Swift synthesizes it for you:',
+      },
+      {
+        type: 'code',
+        id: 'code-hashable-synthesized-example',
+        language: 'swift',
+        content: `struct Point: Hashable {
+    let x: Int
+    let y: Int
+}
+// Swift automatically generates == and hash(into:)`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Forgetting that Dictionary lookup returns an optional — trying to access a key that doesn\'t exist and not handling the optional is a crash.',
+          'Using Array when Set would be more appropriate — if you only need membership checking and don\'t care about order, Set is O(1) instead of O(n).',
+          'Thinking Set and Dictionary preserve insertion order — they don\'t. If you need order, use Array.',
+          'Mutating a Set or Dictionary element after inserting it — if you insert an element and then modify it (changing its hash value), lookups can fail silently. Never mutate collection elements.',
+          'Not understanding copy-on-write — thinking that `var b = a` performs a full copy. It doesn\'t; Swift is lazy and only copies on mutation.',
+          'Trying to add non-Hashable types to a Set or Dictionary — the compiler will error. Primitive types (Int, String, Bool) are Hashable; custom types must explicitly conform.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'l-when-to-use',
+        ordered: false,
+        items: [
+          'Use **Array** by default. It\'s ordered, flexible, and works for most cases.',
+          'Use **Set** when you need fast membership checking, uniqueness enforcement, or set operations (union, intersection). If order doesn\'t matter and you\'re asking "is this value in the collection?", Set is the answer.',
+          'Use **Dictionary** when you need key-value lookup. Array of tuples is cumbersome and slower.',
+          'Use **Array** if you need to preserve insertion order with key-value pairs — Swift doesn\'t have an ordered dictionary in the standard library.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'What is the difference between Array, Set, and Dictionary, and when should you use each?',
+          'Why does a Dictionary lookup return an optional, and what\'s the safest way to access a value?',
+          'What is the Hashable protocol, and why do Set and Dictionary require their elements/keys to be Hashable?',
+          'What is printed by this code, and why? (Array copy-on-write mutation)',
+          'Explain the performance characteristics of Array, Set, and Dictionary for lookup, insertion, and deletion.',
+          'Why can\'t you mutate a Set or Dictionary element after inserting it, and what would go wrong if you did?',
+          'What does \'copy-on-write\' mean for Array, and what\'s the performance benefit?',
+          'What happens when you try to run this code, and why? (Set.first optional return)',
+          'What is the difference between Collection and Sequence protocols, and how do they relate to Array, Set, and Dictionary?',
+          'If you need to store a collection of custom objects and check membership frequently, what should you do to make it efficient?',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-struct-vs-class', 'swift-generics', 'swift-protocols'],
+      },
+    ],
+  },
+
   // ─── Protocols ────────────────────────────────────────────────────────────
   {
     id: 'swift-protocols',
