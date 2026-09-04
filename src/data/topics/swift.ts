@@ -562,13 +562,143 @@ You don't need to implement CoW for simple structs — just use them naturally. 
       {
         type: 'quickAnswer',
         id: 'qa',
-        content: 'A closure is a self-contained block of code that captures and stores references to variables from its surrounding context. In Swift, closures that outlive their creation scope are called **escaping** (`@escaping`) and require explicit capture lists to manage memory safely.',
+        content: 'A closure is a block of code you can pass around and execute later. Closures "capture" variables from the surrounding scope — they hold onto references to those variables so they can access them even after the surrounding scope is gone. This is powerful but requires care: a closure that captures `self` can accidentally keep an object alive forever (a retain cycle), unless you use `[weak self]` to break the cycle.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: "Closures are one of Swift's most powerful features — they unlock patterns that are hard or impossible in other languages.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-callbacks',
+        content: "Callbacks and event handlers: You pass a closure to a button so that when it's tapped, the closure runs. This is how UIKit (and much of iOS) works — you define what should happen, and the system calls you back later when the event occurs.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-fp',
+        content: 'Functional programming: Methods like `map`, `filter`, and `sorted` take closures as arguments. Instead of writing a loop each time, you describe the transformation and let the method handle iteration.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-async',
+        content: 'Asynchronous code: Network requests, timers, and other async operations need a way to tell you "I\'m done, here\'s the result" — closures are how that works.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-catch',
+        content: 'The catch: closures capture references to the variables they use. If a closure captures `self` and `self` also holds onto the closure (directly or indirectly), neither can ever be deallocated. This is a retain cycle, and it\'s a memory leak. Understanding how to avoid it — using `[weak self]` and `[unowned self]` correctly — is essential.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-lifecycle-title',
+        content: '**Closure lifecycle**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-lifecycle',
+        content: 'A closure is created when you write `{ ... }` in code. At that moment, the closure captures references to any variables from the surrounding scope that it references — storing them in a captures list. Then, the closure is either executed immediately (if you call it right away) or stored somewhere (in a property, passed to a function) to be executed later.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-capturing-title',
+        content: '**What "capturing" means**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-capturing-intro',
+        content: 'When you write:',
+      },
+      {
+        type: 'code',
+        id: 'code-capturing',
+        language: 'swift',
+        content: `let x = 10
+let closure = { print(x) }`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-capturing-explain-1',
+        content: 'The closure captures `x` — it holds onto a reference to `x`. Even if `x` goes out of scope, the closure still has access to it, because the closure is keeping it alive.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-capturing-explain-2',
+        content: 'More precisely: the closure captures a *reference* to the variable, not a copy of its value (unless you explicitly capture the value with a capture list). So if `x` is later reassigned, the closure sees the new value.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-escaping-title',
+        content: '**Escaping vs non-escaping**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-escaping-desc',
+        content: 'By default, closures passed as function arguments are **non-escaping** — they execute and return within the function call. The closure cannot outlive the function.',
+      },
+      {
+        type: 'code',
+        id: 'code-nonescaping',
+        language: 'swift',
+        content: `func execute(closure: () -> Void) {
+    closure()  // Non-escaping by default — closure runs here
+}
+execute { print("hello") }  // Runs immediately`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-escaping-stored',
+        content: 'If you want a closure to be stored and executed later, you mark it `@escaping`:',
+      },
+      {
+        type: 'code',
+        id: 'code-escaping',
+        language: 'swift',
+        content: `var savedClosure: (() -> Void)?
+
+func saveForLater(closure: @escaping () -> Void) {
+    savedClosure = closure  // This is allowed because @escaping tells the compiler
+}
+
+saveForLater { print("hello") }
+savedClosure?()  // Runs whenever we call it`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-distinction-title',
+        content: '**Why this distinction matters:**',
+      },
+      {
+        type: 'list',
+        id: 'l-how-distinction',
+        ordered: false,
+        items: [
+          'Non-escaping closures execute immediately on the stack — no memory overhead, no retain cycle risk.',
+          'Escaping closures are stored on the heap, which means they keep references to their captured variables alive. If an escaping closure captures `self` and `self` also holds the closure, neither can ever be released.',
+        ],
       },
       {
         type: 'heading',
         id: 'h-syntax',
         level: 2,
         content: 'Syntax Shorthand',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-syntax-intro',
+        content: "Swift gives you multiple ways to write closures, from fully explicit to terse, so you can choose what's most readable for the situation.",
       },
       {
         type: 'code',
@@ -589,10 +719,85 @@ let sorted3 = numbers.sorted(by: { $0 < $1 })
 let sorted4 = numbers.sorted { $0 < $1 }`,
       },
       {
+        type: 'paragraph',
+        id: 'p-syntax-guide',
+        content: "Which one should you use? Start with the fullest form that's still readable. If the closure is a one-liner doing something obvious (like sorting or filtering), shorthand names are fine. If it's doing something subtle or has multiple lines, explicit names are better — `numbers.sorted { $0 < $1 }` is clear, but `filter { $0.isActive }` is less clear than `filter { user in user.isActive }` if `isActive` isn't obvious from context.",
+      },
+      {
         type: 'heading',
         id: 'h-capture',
         level: 2,
         content: 'Capture Lists & Retain Cycles',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-cycle-title',
+        content: '**What is a retain cycle?**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-cycle-desc-1',
+        content: 'In Swift, objects are kept alive by reference counts (ARC — Automatic Reference Counting). Every time a variable holds a reference to an object, its reference count goes up. When the reference goes away, the count goes down. When the count hits zero, the object is deallocated.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-cycle-desc-2',
+        content: 'A retain cycle happens when two objects keep references to each other:',
+      },
+      {
+        type: 'list',
+        id: 'l-cycle-def',
+        ordered: false,
+        items: [
+          'Object A holds a reference to Object B',
+          'Object B holds a reference to Object A',
+        ],
+      },
+      {
+        type: 'paragraph',
+        id: 'p-cycle-leak',
+        content: "Neither can ever be deallocated, because each is keeping the other alive. It's a memory leak. Closures are a common source of retain cycles in Swift:",
+      },
+      {
+        type: 'code',
+        id: 'code-cycle-api',
+        language: 'swift',
+        content: `class APIClient {
+    var onSuccess: (() -> Void)?
+    
+    func fetchData() {
+        // This closure captures self (so it can call self.handleResponse)
+        // And self holds onto the closure (via self.onSuccess)
+        // → retain cycle
+        self.onSuccess = {
+            self.handleResponse()  // closure captures self
+        }
+    }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-breaking-title',
+        content: '**Breaking the cycle with `[weak self]`**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-breaking-desc-1',
+        content: "Mark the captured reference as `weak`, which means the closure doesn't keep the object alive:",
+      },
+      {
+        type: 'code',
+        id: 'code-weak-example',
+        language: 'swift',
+        content: `self.onSuccess = { [weak self] in
+    guard let self else { return }
+    self.handleResponse()
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-breaking-desc-2',
+        content: "Now: the closure doesn't keep `APIClient` alive. If no other part of the code holds a reference to it, the client can be deallocated. And when it is, the `[weak self]` reference becomes `nil`, which is why we use `guard let self` to safely unwrap it.",
       },
       {
         type: 'code',
@@ -616,6 +821,60 @@ let sorted4 = numbers.sorted { $0 < $1 }`,
         }
     }
 }`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-weak-vs-unowned-title',
+        content: '**`[weak self]` vs `[unowned self]`**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-weak-vs-unowned-desc',
+        content: 'Both break retain cycles, but with different guarantees:',
+      },
+      {
+        type: 'list',
+        id: 'l-weak-vs-unowned',
+        ordered: false,
+        items: [
+          '**`[weak self]`:** The reference can become `nil` if the object is deallocated. You must unwrap it with `guard let` or `if let` before using it. Use this in most cases. It\'s safe — if the object goes away, you gracefully handle the `nil` case.',
+          '**`[unowned self]`:** You\'re asserting to the compiler that the object will always exist as long as the closure exists. If that assumption is wrong, the closure will try to access a deallocated object and crash. Use this only when you can *prove* the closure will never outlive the captured object (rare; mostly in architectures with strict ownership guarantees).',
+        ],
+      },
+      {
+        type: 'paragraph',
+        id: 'p-simple-rule',
+        content: "**Simple rule:** Use `[weak self]` by default. Only use `[unowned self]` if you've explicitly proven the object lifetime and documented why it's safe.",
+      },
+      {
+        type: 'code',
+        id: 'code-async-pattern',
+        language: 'swift',
+        caption: "The pattern you'll use 99% of the time",
+        content: `someAsyncOperation { [weak self] result in
+    guard let self else { return }
+    self.updateUI(with: result)
+}`,
+      },
+      {
+        type: 'callout',
+        id: 'c-autoclosure',
+        variant: 'info',
+        title: 'Note: @autoclosure',
+        content: `Sometimes you see functions marked with \`@autoclosure\`. This is a shorthand syntax that lets you pass a closure without the \`{ }\` braces:
+
+\`\`\`swift
+func logIfDebug(_ message: @autoclosure () -> String) {
+    #if DEBUG
+    print(message())
+    #endif
+}
+
+logIfDebug("expensive computation")  // No braces needed
+// Without @autoclosure, you'd write: logIfDebug { "expensive computation" }
+\`\`\`
+
+\`@autoclosure\` is mostly used in standard library functions (like \`&&\` and \`||\` operators) to make them feel like language features rather than function calls. You rarely need to write it yourself. Just know it exists if you encounter it.`,
       },
       {
         type: 'interview',
