@@ -1,10 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { ChevronRight, Clock, CheckCircle2 } from 'lucide-react';
 import { DifficultyBadge } from '@/components/common/Badge';
-import { isTopicComplete } from '@/lib/progressStore';
+import { useIsTopicComplete } from '@/lib/progressStore';
 import { cn } from '@/lib/utils';
 import type { ArticleTopic, TopicCategory, InterviewRelevance } from '@/types';
 
@@ -21,10 +20,7 @@ interface TopicListItemProps {
 }
 
 export function TopicListItem({ topic, category, className }: TopicListItemProps) {
-  const [completed] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isTopicComplete(topic.id);
-  });
+  const completed = useIsTopicComplete(topic.id);
 
   const relevance = topic.interviewRelevance
     ? interviewRelevanceConfig[topic.interviewRelevance]
