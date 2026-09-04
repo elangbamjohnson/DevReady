@@ -101,7 +101,12 @@ export default function TopicPage({ params }: TopicPageProps) {
                   <ArticleTOCMobile blocks={artTopic.content} className="mt-5" />
                 </header>
 
-                <ArticleRenderer blocks={artTopic.content} topicId={artTopic.id} category={artTopic.category} />
+                <ArticleRenderer
+                  blocks={artTopic.content}
+                  topicId={artTopic.id}
+                  category={artTopic.category}
+                  furtherReading={artTopic.furtherReading}
+                />
 
                 <div className="mt-10 pt-6 border-t border-border-default flex items-center justify-between gap-4">
                   <div>

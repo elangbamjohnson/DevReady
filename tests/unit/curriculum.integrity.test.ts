@@ -69,7 +69,7 @@ describe('Curriculum Content Integrity', () => {
     });
   });
 
-  it('validates that all 98 interview questions reference existing curriculum topic IDs', () => {
+  it('validates that all interview questions reference existing curriculum topic IDs', () => {
     const validTopicIds = new Set(CURRICULUM_TOPICS.map((t) => t.id));
 
     ALL_INTERVIEW_QUESTIONS.forEach((q) => {
@@ -88,5 +88,24 @@ describe('Curriculum Content Integrity', () => {
     const followUpIds = ALL_INTERVIEW_QUESTIONS.flatMap((q) => (q.followUps || []).map((f) => f.id));
     const duplicateFIds = followUpIds.filter((id, i) => followUpIds.indexOf(id) !== i);
     expect(duplicateFIds).toEqual([]);
+  });
+
+  it('validates that furtherReading entries have valid titles, URLs, and source domains', () => {
+    allArticleTopics.forEach((article) => {
+      if (article.furtherReading) {
+        expect(article.furtherReading.length).toBeGreaterThan(0);
+        article.furtherReading.forEach((item) => {
+          expect(item.title.trim().length).toBeGreaterThan(0);
+          expect(item.url).toMatch(/^https:\/\//);
+          expect(['apple-developer', 'swift-org']).toContain(item.source);
+
+          if (item.source === 'apple-developer') {
+            expect(item.url).toMatch(/^https:\/\/developer\.apple\.com\//);
+          } else if (item.source === 'swift-org') {
+            expect(item.url).toMatch(/^https:\/\/docs\.swift\.org\//);
+          }
+        });
+      }
+    });
   });
 });

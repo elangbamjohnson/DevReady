@@ -7,8 +7,9 @@ import { QuickAnswer } from './QuickAnswer';
 import { ContentTable, ComparisonTable } from './ComparisonTable';
 import { InterviewSection } from './InterviewSection';
 import { RelatedTopics } from './RelatedTopics';
+import { FurtherReading } from './FurtherReading';
 import { topicRepository } from '@/data/topics/index';
-import type { ContentBlock } from '@/types';
+import type { ContentBlock, FurtherReadingItem } from '@/types';
 
 // ─── Inline text formatter (`code` → <code>) ─────────────────────────────────
 
@@ -47,9 +48,10 @@ interface ArticleRendererProps {
   blocks: ContentBlock[];
   topicId?: string;
   category?: string;
+  furtherReading?: FurtherReadingItem[];
 }
 
-export function ArticleRenderer({ blocks, topicId, category }: ArticleRendererProps) {
+export function ArticleRenderer({ blocks, topicId, category, furtherReading }: ArticleRendererProps) {
   return (
     <div className="article-content">
       {blocks.map((block) => {
@@ -144,6 +146,9 @@ export function ArticleRenderer({ blocks, topicId, category }: ArticleRendererPr
             return <RelatedTopics key={block.id} topics={topics} />;
           }
 
+          case 'furtherReading':
+            return <FurtherReading key={block.id} items={block.items} />;
+
           case 'divider':
             return <hr key={block.id} className="my-8 border-border-subtle" />;
 
@@ -151,6 +156,10 @@ export function ArticleRenderer({ blocks, topicId, category }: ArticleRendererPr
             return null;
         }
       })}
+
+      {furtherReading && furtherReading.length > 0 && (
+        <FurtherReading items={furtherReading} />
+      )}
     </div>
   );
 }
