@@ -4,7 +4,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Bell, Sun, Menu } from 'lucide-react';
+import { Search, Bell, Menu } from 'lucide-react';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface AppHeaderProps {
   onSearchOpen: () => void;
@@ -36,6 +37,7 @@ export default function AppHeader({
           </Link>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <Link
               href="/dashboard"
               className="text-sm font-medium text-neutral-300 hover:text-white transition-colors"
@@ -54,7 +56,7 @@ export default function AppHeader({
   }
 
   return (
-    <header className="sticky top-0 z-30 bg-[#18181b] border-b border-neutral-800/80 h-14">
+    <header className="sticky top-0 z-30 bg-surface-1 border-b border-border-default h-14">
       <div className="h-full px-4 sm:px-5 flex items-center justify-between gap-4">
         {/* Left: Burger Menu + Search Bar */}
         <div className="flex items-center gap-3 flex-1 max-w-xl">
@@ -62,46 +64,40 @@ export default function AppHeader({
           <button
             type="button"
             onClick={onToggleSidebar}
-            className="p-1.5 rounded-md text-neutral-400 hover:text-white hover:bg-neutral-800 transition-colors cursor-pointer shrink-0 -ml-1"
+            className="p-1.5 rounded-md text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer shrink-0 -ml-1"
             aria-label="Toggle sidebar"
           >
             <Menu className="w-5 h-5" strokeWidth={1.75} />
           </button>
 
-          {/* Search bar with rounded-lg shape, recessed #09090b bg, and ⌘K badge */}
+          {/* Search bar with rounded-lg shape, recessed bg, and ⌘K badge */}
           <button
             type="button"
             onClick={onSearchOpen}
-            className="flex items-center justify-between w-72 sm:w-80 md:w-96 px-3 py-1.5 rounded-lg bg-[#09090b] border border-neutral-800 hover:border-neutral-700 text-neutral-400 text-xs transition-colors cursor-pointer group"
+            className="flex items-center justify-between w-72 sm:w-80 md:w-96 px-3 py-1.5 rounded-lg bg-surface-0 border border-border-default hover:border-border-default/80 text-text-secondary text-xs transition-colors cursor-pointer group"
             aria-label="Search"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <Search className="w-3.5 h-3.5 text-neutral-400 group-hover:text-neutral-300 shrink-0" />
-              <span className="text-xs text-neutral-400 group-hover:text-neutral-300 truncate">
+              <Search className="w-3.5 h-3.5 text-text-tertiary group-hover:text-text-secondary shrink-0" />
+              <span className="text-xs text-text-tertiary group-hover:text-text-secondary truncate">
                 Search topics, questions...
               </span>
             </div>
-            <span className="bg-neutral-800/90 text-neutral-400 text-[10px] px-1.5 py-0.5 rounded border border-neutral-700/60 font-mono shrink-0 ml-2">
+            <span className="bg-surface-2 text-text-tertiary text-[10px] px-1.5 py-0.5 rounded border border-border-default font-mono shrink-0 ml-2">
               ⌘K
             </span>
           </button>
         </div>
 
-        {/* Right: Sun Toggle, Bell with purple dot, AC Avatar */}
+        {/* Right: Theme Toggle, Bell with purple dot, AC Avatar */}
         <div className="flex items-center gap-3 sm:gap-4 shrink-0">
-          {/* Sun icon (theme toggle) */}
-          <button
-            type="button"
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
-            aria-label="Toggle theme"
-          >
-            <Sun className="w-4 h-4" strokeWidth={1.75} />
-          </button>
+          {/* Sun / Moon Theme toggle */}
+          <ThemeToggle />
 
           {/* Bell icon with purple notification dot badge */}
           <button
             type="button"
-            className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors relative cursor-pointer"
+            className="p-1.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors relative cursor-pointer"
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" strokeWidth={1.75} />

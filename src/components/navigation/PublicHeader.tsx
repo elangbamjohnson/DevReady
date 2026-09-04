@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { Search, Bell, Sun } from 'lucide-react';
+import { Search, Bell } from 'lucide-react';
+import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 interface PublicHeaderProps {
   onSearchOpen?: () => void;
@@ -9,7 +10,7 @@ interface PublicHeaderProps {
 
 export function PublicHeader({ onSearchOpen }: PublicHeaderProps) {
   return (
-    <header className="sticky top-0 z-50 bg-[#0A0A0A]">
+    <header className="sticky top-0 z-50 bg-surface-1 border-b border-border-default">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Left: Logo & Brand */}
         <Link href="/" className="flex items-center gap-2.5 shrink-0">
@@ -17,49 +18,43 @@ export function PublicHeader({ onSearchOpen }: PublicHeaderProps) {
             <path d="M5 4L13 12L5 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
             <path d="M11 4L19 12L11 20" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="text-base font-bold text-white tracking-tight">
+          <span className="text-base font-bold text-text-primary tracking-tight">
             SwiftPrep
           </span>
         </Link>
 
         {/* Center: Search Bar */}
-        <button
-          type="button"
-          onClick={onSearchOpen}
-          className="hidden sm:flex items-center justify-between w-72 md:w-96 px-4 py-1.5 rounded-lg bg-[#141414] border border-neutral-800 hover:border-neutral-700 text-neutral-400 text-sm transition-colors cursor-pointer group"
-          aria-label="Search"
-        >
-          <div className="flex items-center gap-2.5">
-            <Search className="w-4 h-4 text-neutral-500 group-hover:text-neutral-400 transition-colors" />
-            <span className="text-sm text-neutral-500 group-hover:text-neutral-400">
-              Search topics, questions...
-            </span>
-          </div>
-          <span className="bg-neutral-800/80 text-neutral-400 text-[10px] px-1.5 py-0.5 rounded font-medium">
-            ⌘K
-          </span>
-        </button>
+        <div className="flex-1 max-w-md mx-4 hidden sm:block">
+          <button
+            type="button"
+            onClick={onSearchOpen}
+            className="hidden sm:flex items-center justify-between w-72 md:w-96 px-4 py-1.5 rounded-lg bg-surface-0 border border-border-default hover:border-border-default/80 text-text-secondary text-sm transition-colors cursor-pointer group"
+            aria-label="Search"
+          >
+            <div className="flex items-center gap-2 text-text-tertiary group-hover:text-text-secondary">
+              <Search className="w-4 h-4" />
+              <span>Search topics, questions...</span>
+            </div>
+            <kbd className="hidden md:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-xs text-text-tertiary bg-surface-2 border border-border-default rounded font-mono">
+              ⌘K
+            </kbd>
+          </button>
+        </div>
 
         {/* Right: Actions */}
-        <div className="flex items-center gap-3 sm:gap-6 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
           {/* Mobile search button */}
           <button
             type="button"
             onClick={onSearchOpen}
-            className="sm:hidden p-2 rounded-lg text-neutral-400 hover:text-white hover:bg-neutral-900 transition-colors cursor-pointer"
+            className="sm:hidden p-2 rounded-lg text-text-secondary hover:text-text-primary hover:bg-surface-2 transition-colors cursor-pointer"
             aria-label="Search"
           >
             <Search className="w-4 h-4" />
           </button>
 
-          {/* Sun icon (theme) */}
-          <button
-            type="button"
-            className="text-neutral-400 hover:text-white transition-colors cursor-pointer"
-            aria-label="Toggle theme"
-          >
-            <Sun className="w-4 h-4" />
-          </button>
+          {/* Theme toggle */}
+          <ThemeToggle />
 
           {/* Outline Bell icon (notifications) */}
           <button
