@@ -13,6 +13,7 @@ import { swiftuiTopics } from './swiftui';
 import { uikitTopics } from './uikit';
 import { memoryTopics } from './memory';
 import { architectureTopics } from './architecture';
+import { curriculumRepository } from '../curriculum';
 
 // ─── All Topics ───────────────────────────────────────────────────────────────
 
@@ -120,9 +121,33 @@ export const topicRepository = {
   getAdjacentTopics(topicId: string): { previous?: ArticleTopic; next?: ArticleTopic } {
     const topic = allArticleTopics.find(t => t.id === topicId);
     if (!topic) return {};
+
+    const resolveTopic = (id?: string): ArticleTopic | undefined => {
+      if (!id) return undefined;
+      const found = allArticleTopics.find(t => t.id === id);
+      if (found) return found;
+      const curr = curriculumRepository.getTopicById(id);
+      if (curr) {
+        return {
+          id: curr.id,
+          slug: curr.slug,
+          title: curr.title,
+          category: curr.domainId as TopicCategory,
+          group: curr.moduleId,
+          description: curr.description,
+          difficulty: curr.difficulty,
+          estimatedTime: curr.estimatedMinutes,
+          tags: curr.tags,
+          content: [],
+          relatedTopics: [],
+        };
+      }
+      return undefined;
+    };
+
     return {
-      previous: topic.previousTopic ? allArticleTopics.find(t => t.id === topic.previousTopic) : undefined,
-      next: topic.nextTopic ? allArticleTopics.find(t => t.id === topic.nextTopic) : undefined,
+      previous: resolveTopic(topic.previousTopic),
+      next: resolveTopic(topic.nextTopic),
     };
   },
 

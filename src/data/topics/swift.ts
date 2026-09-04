@@ -557,7 +557,7 @@ You don't need to implement CoW for simple structs — just use them naturally. 
     tags: ['closures', 'capture-list', 'weak-self', 'escaping', 'trailing-closure'],
     relatedTopics: ['swift-struct-vs-class', 'memory-retain-cycles', 'memory-arc'],
     previousTopic: 'swift-struct-vs-class',
-    nextTopic: 'swift-protocols',
+    nextTopic: 'swift-control-flow',
     content: [
       {
         type: 'quickAnswer',
@@ -888,6 +888,452 @@ logIfDebug("expensive computation")  // No braces needed
         ],
       },
       { type: 'relatedTopics', id: 'related', topicIds: ['memory-retain-cycles', 'swift-protocols'] },
+    ],
+  },
+
+  // ─── Control Flow & Pattern Matching ───────────────────────────────────────
+  {
+    id: 'swift-control-flow',
+    slug: 'control-flow',
+    title: 'Control Flow & Pattern Matching',
+    category: 'swift',
+    group: 'Swift Fundamentals',
+    description: 'Conditionals, loops, guard statements, switch expressions, and pattern matching — how Swift lets you direct the flow of your code based on conditions and destructure data.',
+    difficulty: 'foundational',
+    estimatedTime: 25,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-01' },
+    interviewRelevance: 'high',
+    tags: ['control-flow', 'switch', 'pattern-matching', 'guard', 'conditionals', 'loops'],
+    relatedTopics: ['swift-optionals', 'swift-closures', 'swift-enums'],
+    previousTopic: 'swift-closures',
+    nextTopic: 'swift-functions',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'Control flow directs which parts of your code run and when. `if` and `guard` handle conditionals, `switch` matches on values, and `for`/`while` loops repeat. **Pattern matching** is where Swift shines — you can destructure optionals, tuples, and enums inline with `if let`, `if case`, and `switch`, turning error-prone checking into readable, type-safe code.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'In most languages, conditionals are just `if/else`, and if you want to check multiple cases, you either nest deeply or write long chains of `if-else-if-else`. Pattern matching lets you do both at the same time: branch on a condition *and* extract values from complex data structures.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'Example: you have an optional Int. In other languages:',
+      },
+      {
+        type: 'code',
+        id: 'code-other-languages',
+        language: 'swift',
+        content: `if int != nil {
+    let value = int!  // Force unwrap, hope it works
+    print(value)
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-3',
+        content: 'In Swift with pattern matching:',
+      },
+      {
+        type: 'code',
+        id: 'code-swift-pattern-matching',
+        language: 'swift',
+        content: `if let value = int {
+    print(value)  // value is already unwrapped, type-safe
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-4',
+        content:
+          "That's not just shorter — it's safer. Swift won't let you forget the nil case, and the unwrapped value is available in scope automatically.",
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-5',
+        content:
+          'This extends to enums, tuples, and arbitrary data. One `switch` statement can destructure multiple levels of nesting:',
+      },
+      {
+        type: 'code',
+        id: 'code-switch-destructuring',
+        language: 'swift',
+        content: `switch result {
+case .success(let data):
+    print(data)  // data is automatically unwrapped
+case .failure(let error):
+    print("Error: \\(error)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-6',
+        content:
+          "Control flow + pattern matching is how you write Swift that's both safe and readable.",
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-ifelse-intro',
+        content: '**if / else — basic conditional branching**',
+      },
+      {
+        type: 'code',
+        id: 'code-ifelse-basic',
+        language: 'swift',
+        content: `let age = 18
+
+if age >= 18 {
+    print("You can vote")
+} else {
+    print("You're too young to vote")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-ifelse-chain-intro',
+        content:
+          '`if` evaluates a Boolean expression and runs the block if true. `else` runs if false. You can chain multiple conditions:',
+      },
+      {
+        type: 'code',
+        id: 'code-ifelse-chain',
+        language: 'swift',
+        content: `if age < 13 {
+    print("Child")
+} else if age < 18 {
+    print("Teenager")
+} else {
+    print("Adult")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guard-intro',
+        content: '**guard — early exit pattern**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guard-desc',
+        content:
+          '`guard` is like `if`, but it\'s designed for the "if this condition fails, bail out" pattern. It reads more naturally for that case:',
+      },
+      {
+        type: 'code',
+        id: 'code-guard-example',
+        language: 'swift',
+        content: `func greet(name: String?) {
+    guard let name = name else {
+        print("No name provided")
+        return
+    }
+    print("Hello, \\(name)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guard-compare',
+        content: 'Compare that to:',
+      },
+      {
+        type: 'code',
+        id: 'code-nested-if-compare',
+        language: 'swift',
+        content: `// Nested if — pyramid of doom
+if name != nil {
+    let unwrapped = name!
+    print("Hello, \\(unwrapped)")
+} else {
+    print("No name provided")
+    return
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-guard-summary',
+        content:
+          '`guard let` is clearer: the happy path continues forward, and the error case exits early. This is the "happy path" pattern that senior Swift developers use everywhere.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-switch-intro',
+        content: '**switch — matching on values**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-switch-desc',
+        content: 'Unlike `if/else`, `switch` is designed to match on many cases at once:',
+      },
+      {
+        type: 'code',
+        id: 'code-switch-example',
+        language: 'swift',
+        content: `let day = "Monday"
+
+switch day {
+case "Monday":
+    print("Back to work")
+case "Saturday", "Sunday":
+    print("Weekend!")
+default:
+    print("Midweek")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-switch-exhaustiveness',
+        content:
+          'Each case must be exhaustive (you must handle all possibilities) or have a `default` catch-all. Swift won\'t let you forget a case.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-switch-expression-intro',
+        content: 'In Swift 6, `switch` is an expression, meaning it returns a value:',
+      },
+      {
+        type: 'code',
+        id: 'code-switch-expression',
+        language: 'swift',
+        content: `let status = switch day {
+case "Monday":
+    "Back to work"
+case "Saturday", "Sunday":
+    "Weekend!"
+default:
+    "Midweek"
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-intro',
+        content: '**Pattern matching — the power move**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-desc',
+        content:
+          'This is where control flow becomes genuinely powerful. Pattern matching lets you destructure data and branch in one operation.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-opt-intro',
+        content: 'Code Example (with optional):',
+      },
+      {
+        type: 'code',
+        id: 'code-pattern-matching-optional',
+        language: 'swift',
+        content: `let email: String? = "alice@example.com"
+
+if let email = email {
+    print("Email is: \\(email)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-enum-intro',
+        content: 'Code Example (with enum):',
+      },
+      {
+        type: 'code',
+        id: 'code-pattern-matching-enum',
+        language: 'swift',
+        content: `enum Result {
+    case success(String)
+    case failure(Error)
+}
+
+let result = Result.success("Data loaded")
+
+switch result {
+case .success(let data):
+    print("Success: \\(data)")
+case .failure(let error):
+    print("Failed: \\(error)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-tuple-intro',
+        content: 'Code Example (with tuple destructuring):',
+      },
+      {
+        type: 'code',
+        id: 'code-pattern-matching-tuple',
+        language: 'swift',
+        content: `let point = (x: 0, y: 0)
+
+switch point {
+case (0, 0):
+    print("Origin")
+case (let x, 0):
+    print("On x-axis at \\(x)")
+case (0, let y):
+    print("On y-axis at \\(y)")
+case (let x, let y):
+    print("Point: \\(x), \\(y)")
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-pattern-matching-where-intro',
+        content: 'The `where` clause lets you add additional conditions to a pattern:',
+      },
+      {
+        type: 'code',
+        id: 'code-pattern-matching-where',
+        language: 'swift',
+        content: `let numbers = [1, 2, 3, 4, 5]
+
+for num in numbers {
+    switch num {
+    case let x where x % 2 == 0:
+        print("\\(x) is even")
+    case let x where x % 2 == 1:
+        print("\\(x) is odd")
+    default:
+        break
+    }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-loops-intro',
+        content: '**Loops**',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-forin-intro',
+        content: '**for-in loop** — iterate over collections',
+      },
+      {
+        type: 'code',
+        id: 'code-forin-loop',
+        language: 'swift',
+        content: `let fruits = ["Apple", "Banana", "Cherry"]
+
+for fruit in fruits {
+    print(fruit)
+}
+
+// With index
+for (index, fruit) in fruits.enumerated() {
+    print("\\(index): \\(fruit)")
+}
+
+// Range
+for i in 1...5 {
+    print(i)  // 1, 2, 3, 4, 5
+}
+
+// With stride (skip by 2)
+for i in stride(from: 0, to: 10, by: 2) {
+    print(i)  // 0, 2, 4, 6, 8
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-while-intro',
+        content: '**while loop** — repeat while condition is true',
+      },
+      {
+        type: 'code',
+        id: 'code-while-loop',
+        language: 'swift',
+        content: `var count = 0
+while count < 5 {
+    print(count)
+    count += 1
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-repeatwhile-intro',
+        content: '**repeat-while** — run at least once, then check condition',
+      },
+      {
+        type: 'code',
+        id: 'code-repeatwhile-loop',
+        language: 'swift',
+        content: `var attempts = 0
+repeat {
+    print("Trying...")
+    attempts += 1
+} while attempts < 3`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Forgetting that `switch` requires exhaustive matching — the compiler will error if you miss a case. This is intentional; it prevents silent bugs.',
+          'Using `if let` when `guard let` would be clearer — if you\'re going to exit early, use `guard`. It reads better.',
+          'Forgetting that `else if` chains can become unreadable — if you have 4+ cases, use `switch` instead.',
+          'Using `default: break` instead of omitting the case entirely in a switch — if a case does nothing, just don\'t include it (Swift requires exhaustiveness, but `default` with nothing is confusing).',
+          'Nesting patterns too deeply without a `where` clause to add readability — pattern matching is powerful, but deeply nested patterns become hard to read.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'l-when-to-use',
+        ordered: false,
+        items: [
+          'Use `if/else` for simple yes-or-no decisions (one or two conditions).',
+          'Use `guard` when you need to exit early or validate preconditions — this is the "happy path" pattern.',
+          'Use `switch` when you have many distinct cases to handle.',
+          'Use pattern matching whenever you\'re checking optionals, enums, or unpacking tuples — it\'s both safer and more readable than alternatives.',
+          'Use `where` clauses in patterns when you need to add additional logic beyond the structure of the data.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          "What is the difference between 'if let' and 'guard let', and when should you use each?",
+          'Why does Swift require switch statements to be exhaustive, and what happens if you forget a case?',
+          'What is pattern matching, and why is it powerful in Swift?',
+          "What is the difference between 'for-in', 'while', and 'repeat-while' loops?",
+          "Explain the difference between 'if case let' and 'switch case' for pattern matching on enums.",
+          "What does this code print, and why?\\n\\nlet nums = [1, 2, 3, 4, 5]\\nfor num in nums {\\n    if num % 2 == 0 {\\n        continue\\n    }\\n    print(num)\\n}",
+          "What is the 'where' clause in a switch or for loop, and when should you use it?",
+          'In Swift 6, switch can be an expression that returns a value. How does this differ from switch as a statement, and why is it useful?',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-optionals', 'swift-closures', 'swift-enums'],
+      },
     ],
   },
 
