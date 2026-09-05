@@ -70,4 +70,40 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     await expect(page).toHaveURL(/\/learn\?browse=1/);
     await expect(page.getByRole('heading', { level: 1, name: 'Learn' })).toBeVisible();
   });
+
+  test('restores scroll position when returning to a topic', async ({ page }) => {
+    await page.goto('/learn/swift/optionals');
+    await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible();
+
+    // Scroll down partway through the article (50% of scrollable range)
+    await page.evaluate(() => {
+      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+      window.scrollTo(0, maxScroll * 0.5);
+    });
+    await page.waitForTimeout(500); // allow progress-save logic to record it
+
+    // Verify progress was recorded in storage
+    const stored = await page.evaluate(() => {
+      const raw = localStorage.getItem('swiftcraft_progress');
+      return raw ? JSON.parse(raw)['swift-optionals'] : null;
+    });
+    expect(stored?.progress).toBeGreaterThan(40);
+
+    // Navigate away and back (simulating the redirect flow)
+    await page.goto('/');
+    await page.goto('/learn/swift/optionals');
+
+    // Wait for restoration to complete
+    await page.waitForTimeout(300);
+
+    const scrollY = await page.evaluate(() => window.scrollY);
+    const scrollableHeight = await page.evaluate(
+      () => document.documentElement.scrollHeight - window.innerHeight
+    );
+    const restoredPercent = (scrollY / scrollableHeight) * 100;
+
+    // Allow reasonable tolerance — exact pixel match isn't the goal
+    expect(restoredPercent).toBeGreaterThan(40);
+    expect(restoredPercent).toBeLessThan(60);
+  });
 });

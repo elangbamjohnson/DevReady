@@ -14,7 +14,7 @@ import { ArticleTOCDesktop, ArticleTOCMobile } from '@/components/learn/ArticleT
 import { PreviousNext } from '@/components/learn/PreviousNext';
 import { topicRepository, categoryMeta } from '@/data/topics/index';
 import { CURRICULUM_TOPICS, CURRICULUM_DOMAINS } from '@/data/curriculum';
-import { markTopicComplete, useIsTopicComplete, recordTopicView } from '@/lib/progressStore';
+import { markTopicComplete, useIsTopicComplete, recordTopicView, getTopicProgress } from '@/lib/progressStore';
 
 interface TopicPageProps {
   params: Promise<{ category: string; topic: string }>;
@@ -50,6 +50,56 @@ export default function TopicPage({ params }: TopicPageProps) {
     }
   }, [topicId]);
 
+  // Scroll position restoration
+  useEffect(() => {
+    if (!topicId) return;
+
+    if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    let isCancelled = false;
+    let userHasScrolled = false;
+
+    const onUserScroll = () => {
+      userHasScrolled = true;
+    };
+
+    window.addEventListener('wheel', onUserScroll, { passive: true, once: true });
+    window.addEventListener('touchmove', onUserScroll, { passive: true, once: true });
+
+    const existing = getTopicProgress(topicId);
+    const savedProgress = existing?.progress ?? 0;
+
+    // Skip restoration for negligible progress — nothing meaningful to restore
+    if (savedProgress < 3) {
+      return () => {
+        window.removeEventListener('wheel', onUserScroll);
+        window.removeEventListener('touchmove', onUserScroll);
+      };
+    }
+
+    const restoreScroll = () => {
+      if (isCancelled || userHasScrolled) return;
+      const scrollableHeight = document.documentElement.scrollHeight - window.innerHeight;
+      if (scrollableHeight <= 0) return; // page isn't scrollable, nothing to restore
+
+      const targetY = (savedProgress / 100) * scrollableHeight;
+      window.scrollTo({ top: targetY, behavior: 'instant' as ScrollBehavior });
+    };
+
+    const timeoutId = setTimeout(() => {
+      requestAnimationFrame(restoreScroll);
+    }, 100);
+
+    return () => {
+      isCancelled = true;
+      clearTimeout(timeoutId);
+      window.removeEventListener('wheel', onUserScroll);
+      window.removeEventListener('touchmove', onUserScroll);
+    };
+  }, [topicId]);
+
   const handleMarkComplete = () => {
     markTopicComplete(topicId);
   };
@@ -60,7 +110,7 @@ export default function TopicPage({ params }: TopicPageProps) {
 
     return (
       <>
-        <ReadingProgress />
+        <ReadingProgress topicId={topicId} />
         <AppShell>
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
             {/* Breadcrumb */}
@@ -150,7 +200,9 @@ export default function TopicPage({ params }: TopicPageProps) {
 
   // Fallback: Render rich Curriculum Topic Overview for planned/curriculum topics
   return (
-    <AppShell>
+    <>
+      <ReadingProgress topicId={topicId} />
+      <AppShell>
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-400 mb-6 flex-wrap">
@@ -252,5 +304,6 @@ export default function TopicPage({ params }: TopicPageProps) {
         </div>
       </div>
     </AppShell>
+    </>
   );
 }
