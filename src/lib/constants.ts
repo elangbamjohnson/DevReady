@@ -5,6 +5,7 @@ import type { TopicCategory } from '@/types';
 export const NAV_ITEMS = [
   { label: 'Home', href: '/dashboard', icon: 'Home' as const },
   { label: 'Learn', href: '/learn', icon: 'BookOpen' as const },
+  { label: 'Playground', href: '/playground', icon: 'Terminal' as const },
   { label: 'Interview', href: '/interview', icon: 'MessageSquare' as const },
   { label: 'Challenges', href: '/interview', icon: 'Zap' as const },
   { label: 'Bookmarks', href: '/bookmarks', icon: 'Bookmark' as const },
