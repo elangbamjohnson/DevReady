@@ -106,4 +106,25 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     expect(restoredPercent).toBeGreaterThan(40);
     expect(restoredPercent).toBeLessThan(60);
   });
+
+  test('restores scroll position around code blocks without jump', async ({ page }) => {
+    await page.goto('/learn/swift/optionals');
+    const codeBlock = page.locator('pre').first();
+    await expect(codeBlock).toBeVisible();
+
+    // Scroll to the code block
+    await codeBlock.scrollIntoViewIfNeeded();
+    await page.waitForTimeout(500); // allow save debounce to complete
+
+    const codeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
+
+    // Navigate away and back
+    await page.goto('/dashboard');
+    await page.goto('/learn/swift/optionals');
+
+    // Code block should be at approximately the same viewport position immediately
+    await expect(codeBlock).toBeVisible();
+    const restoredCodeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
+    expect(Math.abs(restoredCodeBlockY - codeBlockY)).toBeLessThan(60);
+  });
 });
