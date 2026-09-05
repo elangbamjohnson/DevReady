@@ -2884,63 +2884,536 @@ do {
     slug: 'protocols',
     title: 'Protocols & Protocol Extensions',
     category: 'swift',
-    group: 'Advanced Swift',
-    description: 'Protocol-oriented programming, default implementations, associated types, and protocol composition.',
-    difficulty: 'mid',
-    estimatedTime: 15,
+    group: 'Core Object-Oriented & Value Types',
+    description: 'Protocol-oriented programming, method and property requirements, mutating contracts, default implementations, static vs dynamic dispatch, AnyObject delegates, and associated types.',
+    difficulty: 'intermediate',
+    estimatedTime: 30,
     language: 'swift',
-    version: { language: 'Swift', version: '6', status: 'current', lastReviewed: '2026-09-01' },
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-05' },
     interviewRelevance: 'high',
-    tags: ['protocols', 'POP', 'associated-types', 'protocol-composition'],
-    relatedTopics: ['swift-generics', 'swift-closures', 'arch-di'],
-    previousTopic: 'swift-closures',
+    tags: ['protocols', 'protocol-extensions', 'pop', 'associated-types', 'anyobject', 'some-vs-any', 'dispatch', 'delegates'],
+    relatedTopics: ['swift-properties', 'swift-struct-vs-class', 'swift-generics', 'swift-some-vs-any', 'arch-di'],
+    furtherReading: [
+      {
+        title: 'Protocols — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/protocols',
+        source: 'swift-org',
+      },
+      {
+        title: 'Protocol-Oriented Programming in Swift — Apple Developer',
+        url: 'https://developer.apple.com/videos/play/wwdc2015/408/',
+        source: 'apple-developer',
+      },
+    ],
+    previousTopic: 'swift-properties',
     nextTopic: 'swift-generics',
     content: [
       {
         type: 'quickAnswer',
         id: 'qa',
-        content: 'A protocol defines a blueprint of methods, properties, and other requirements. Protocols enable **protocol-oriented programming** — Swift\'s preferred composition model over class inheritance. Protocol extensions provide default implementations that work across all conforming types.',
+        content: 'A **protocol** in Swift is a contract (a blueprint) defining methods, properties, and other requirements. Any `struct`, `class`, or `enum` can conform to it. Swift is a **Protocol-Oriented Programming (POP)** language: instead of building massive class inheritance trees, you compose small protocols and use **protocol extensions** to provide default implementations. A critical interview distinction is **dynamic dispatch** (via protocol witness tables for declared requirements) versus **static dispatch** (direct call for extension-only methods).',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why protocols matter: Protocol-Oriented Programming',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: 'In traditional Object-Oriented Programming (OOP), code reuse relies heavily on **class inheritance**. While inheritance works, it carries well-known architectural drawbacks: you can only inherit from a single superclass, you inherit unwanted properties and methods ("fragile base class problem"), and you are forced to use reference types (classes) even when value types (structs) would be safer and faster.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'At WWDC 2015, Apple introduced Swift 2 with the rallying cry: *"Swift is the world\'s first protocol-oriented programming language."* In Swift, protocols allow structs, enums, and classes to share capabilities without a shared ancestor class. The Swift Standard Library itself is built on protocols: `Equatable`, `Comparable`, `Hashable`, `Sequence`, and `Collection` are all protocols that power everyday types like `Array`, `String`, and `Dictionary`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-basics',
+        level: 2,
+        content: 'Declaring protocols: Property and method requirements',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-basics-1',
+        content: 'A protocol defines what a conforming type must provide. Protocols never allocate storage — they only declare requirements. When declaring a property requirement, you must explicitly specify whether it is **get-only** (`{ get }`) or **gettable and settable** (`{ get set }`).',
       },
       {
         type: 'code',
-        id: 'code-protocol',
+        id: 'code-basics',
         language: 'swift',
-        content: `protocol Describable {
-    var description: String { get }
-    func describe() -> String
+        caption: 'Property and method requirements in a protocol',
+        content: `protocol IdentifiableEntity {
+    // Requirements cannot have default values or stored property backings
+    var id: String { get }            // Must be at least readable
+    var displayName: String { get set } // Must be readable AND writable
+    
+    // Method requirement: signature only, no body
+    func summary() -> String
 }
 
-// Protocol extension provides default implementation
-extension Describable {
-    func describe() -> String {
-        "Object: \\(description)"
+// Struct conforming to IdentifiableEntity
+struct UserAccount: IdentifiableEntity {
+    let id: String                    // 'let' satisfies { get }!
+    var displayName: String           // 'var' satisfies { get set }
+    
+    func summary() -> String {
+        "User \\(displayName) [#\\(id)]"
     }
 }
 
-struct User: Describable {
-    var description: String { "User(name: Alice)" }
-    // describe() is inherited from extension
+// Class conforming to IdentifiableEntity
+class DeviceAsset: IdentifiableEntity {
+    var id: String                    // Stored 'var' satisfies { get }
+    var displayName: String
+    
+    init(id: String, displayName: String) {
+        self.id = id
+        self.displayName = displayName
+    }
+    
+    func summary() -> String {
+        "Device: \\(displayName)"
+    }
 }`,
       },
       {
         type: 'callout',
-        id: 'c-assoc',
+        id: 'c-get-rule',
+        variant: 'tip',
+        title: '{ get } does NOT mean read-only',
+        content: 'A common beginner misconception is thinking `{ get }` forces the conforming property to be constant or read-only. It actually means **at least readable**. A conforming type can satisfy `{ get }` with a constant `let`, a mutable stored `var`, or a computed property (read-only or read-write). In contrast, `{ get set }` strictly requires a mutable `var`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-mutating',
+        level: 2,
+        content: 'Mutating method requirements for value types',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-mutating-1',
+        content: 'Because structs and enums are value types, their instance methods cannot modify their own stored properties unless marked with the `mutating` keyword. If a protocol method is meant to modify the instance, the protocol declaration **must** mark the method as `mutating func`.',
+      },
+      {
+        type: 'code',
+        id: 'code-mutating',
+        language: 'swift',
+        caption: 'mutating requirements in protocols',
+        content: `protocol Togglable {
+    mutating func toggle()
+}
+
+// Enum conforms — needs mutating keyword
+enum SwitchState: Togglable {
+    case on, off
+    
+    mutating func toggle() {
+        self = (self == .on) ? .off : .on
+    }
+}
+
+// Struct conforms — needs mutating keyword
+struct Flashlight: Togglable {
+    private(set) var isOn: Bool = false
+    
+    mutating func toggle() {
+        isOn.toggle()
+    }
+}
+
+// Class conforms — does NOT need mutating keyword!
+class SmartBulb: Togglable {
+    var isOn: Bool = false
+    
+    // Classes are reference types; mutating is omitted
+    func toggle() {
+        isOn.toggle()
+    }
+}`,
+      },
+      {
+        type: 'callout',
+        id: 'c-mutating-trap',
+        variant: 'important',
+        title: 'Classes ignore mutating, but value types require it',
+        content: 'If you omit `mutating` from the protocol definition, a struct or enum that conforms **cannot** modify any of its own properties inside that method. However, when a class conforms to a protocol with a `mutating func`, it simply omits the `mutating` keyword because reference types are inherently mutable across references.',
+      },
+      {
+        type: 'heading',
+        id: 'h-extensions',
+        level: 2,
+        content: 'Protocol extensions: Default implementations & retroactive modeling',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-extensions-1',
+        content: 'Prior to protocol extensions, defining a protocol meant every conforming type had to implement every single method from scratch. With **protocol extensions**, you can provide a **default implementation**. Conforming types get this functionality for free and only override it if they need custom behavior.',
+      },
+      {
+        type: 'code',
+        id: 'code-extensions',
+        language: 'swift',
+        caption: 'Default implementations and retroactive modeling via extensions',
+        content: `protocol Greetable {
+    var name: String { get }
+    func sayHello() -> String
+}
+
+// Provide a default implementation for sayHello()
+extension Greetable {
+    func sayHello() -> String {
+        "Hello, my name is \\(name)!"
+    }
+}
+
+// Customer gets sayHello() automatically without writing any code!
+struct Customer: Greetable {
+    let name: String
+}
+
+let customer = Customer(name: "Maya")
+print(customer.sayHello()) // "Hello, my name is Maya!"
+
+// Conforming types can still override the default when needed
+struct Robot: Greetable {
+    let name: String
+    func sayHello() -> String {
+        "BEEP BOOP: I am unit \\(name)."
+    }
+}
+
+let bot = Robot(name: "R2-D2")
+print(bot.sayHello()) // "BEEP BOOP: I am unit R2-D2."`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-extensions-2',
+        content: 'You can also extend protocols conditionally using `where` clauses, or extend existing types to conform to protocols retroactively (**retroactive modeling**):',
+      },
+      {
+        type: 'code',
+        id: 'code-conditional-ext',
+        language: 'swift',
+        caption: 'Conditional protocol extensions',
+        content: `// Add a helper method ONLY to Collections whose elements are Ints
+extension Collection where Element == Int {
+    func sum() -> Int {
+        reduce(0, +)
+    }
+}
+
+let scores = [10, 25, 40]
+print(scores.sum()) // 75
+
+let words = ["hello", "world"]
+// words.sum() // ❌ Compile error: Element is String, not Int`,
+      },
+      {
+        type: 'heading',
+        id: 'h-dispatch',
+        level: 2,
+        content: 'The dispatch trap: Declared requirements vs extension-only methods',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-dispatch-1',
+        content: 'This is one of the most famous and tricky questions asked in Swift iOS interviews. How a method is dispatched depends entirely on whether it is **declared in the protocol blueprint** or **only exists in the protocol extension**.',
+      },
+      {
+        type: 'list',
+        id: 'l-dispatch-rules',
+        ordered: false,
+        items: [
+          '**Declared in protocol + default in extension**: Dispatched **dynamically** via the Protocol Witness Table (PWT). If a conforming type overrides it, the conforming type\'s method is ALWAYS called, even when accessed through a protocol existential (`any Protocol`).',
+          '**ONLY in extension (not declared in protocol)**: Dispatched **statically** (direct compile-time call). If a variable is typed as the protocol, the extension implementation executes — even if the concrete type implemented its own version with the exact same name!',
+        ],
+      },
+      {
+        type: 'code',
+        id: 'code-dispatch-trap',
+        language: 'swift',
+        caption: 'Static vs Dynamic dispatch demonstration',
+        content: `protocol Speaker {
+    func speak() // Declared in protocol blueprint -> DYNAMIC dispatch
+}
+
+extension Speaker {
+    func speak() {
+        print("Default speaker sound")
+    }
+    
+    // NOT declared in the protocol definition -> STATIC dispatch!
+    func introduce() {
+        print("Speaker introduction")
+    }
+}
+
+struct Dog: Speaker {
+    func speak() {
+        print("Woof!")
+    }
+    
+    func introduce() {
+        print("I am a friendly golden retriever")
+    }
+}
+
+let dog: Dog = Dog()
+dog.speak()     // "Woof!" (concrete type calls concrete method)
+dog.introduce() // "I am a friendly golden retriever"
+
+// Now view the dog through the protocol lens:
+let speaker: any Speaker = dog
+speaker.speak()     // "Woof!" -> Dynamic dispatch via witness table
+speaker.introduce() // "Speaker introduction" -> STATIC dispatch calls extension!`,
+      },
+      {
+        type: 'callout',
+        id: 'c-dispatch-warning',
+        variant: 'warning',
+        title: 'Why static dispatch surprises developers',
+        content: 'Notice `speaker.introduce()` printed `"Speaker introduction"`, completely ignoring `Dog.introduce()`! Because `introduce()` was not part of `Speaker`\'s requirements, the compiler generated a direct static call to `Speaker.introduce()` at compile time based on the variable\'s static type (`any Speaker`). If you want polymorphic behavior, ALWAYS declare the method signature inside the protocol definition.',
+      },
+      {
+        type: 'heading',
+        id: 'h-class-only',
+        level: 2,
+        content: 'Class-only protocols: AnyObject and weak delegates',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-class-only-1',
+        content: 'In iOS and macOS development, the **Delegate pattern** is everywhere (e.g., `UITableViewDelegate`, `CLLocationManagerDelegate`). To avoid strong reference cycles (memory leaks), delegate properties must be marked `weak`.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-class-only-2',
+        content: 'However, in Swift, `weak` can only be applied to reference types (classes). Value types like structs cannot be held weakly because they do not have reference counting. Therefore, any protocol intended to be held as a `weak` delegate must inherit from `AnyObject`.',
+      },
+      {
+        type: 'code',
+        id: 'code-class-only',
+        language: 'swift',
+        caption: 'AnyObject delegate protocol to allow weak references',
+        content: `// AnyObject restricts conformance strictly to classes
+protocol AudioPlayerDelegate: AnyObject {
+    func audioPlayerDidFinishPlaying(_ player: AudioPlayer)
+    func audioPlayer(_ player: AudioPlayer, didEncounterError error: Error)
+}
+
+class AudioPlayer {
+    // Must be 'weak' to prevent a retain cycle with the delegate owner
+    weak var delegate: (any AudioPlayerDelegate)?
+    
+    func playbackEnded() {
+        delegate?.audioPlayerDidFinishPlaying(self)
+    }
+}
+
+// ❌ If you try to conform a struct, the compiler rejects it:
+// struct MusicTracker: AudioPlayerDelegate { ... }
+// Error: Non-class type 'MusicTracker' cannot conform to class protocol 'AudioPlayerDelegate'`,
+      },
+      {
+        type: 'callout',
+        id: 'c-class-keyword',
         variant: 'info',
-        title: 'Associated Types',
-        content: 'Protocols with associated types (PATs) define generic protocols — they declare a placeholder type that conforming types must specify. Example: `protocol Container { associatedtype Item; var items: [Item] { get } }`.',
+        title: 'class vs AnyObject keyword',
+        content: 'In older Swift versions, developers wrote `protocol AudioPlayerDelegate: class`. Swift 5 deprecated `: class` in favor of `: AnyObject` to make it clear that the constraint refers to the `AnyObject` protocol (the protocol that all classes implicitly conform to).',
+      },
+      {
+        type: 'heading',
+        id: 'h-composition',
+        level: 2,
+        content: 'Protocol composition: Combining smaller protocols',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-composition-1',
+        content: 'Instead of designing a massive protocol with dozens of requirements, idiomatic Swift encourages designing small, focused protocols (Interface Segregation Principle). You can then combine multiple protocols together at call sites using the ampersand (`&`) operator.',
+      },
+      {
+        type: 'code',
+        id: 'code-composition',
+        language: 'swift',
+        caption: 'Protocol composition with the & operator',
+        content: `protocol Named {
+    var name: String { get }
+}
+
+protocol Aged {
+    var age: Int { get }
+}
+
+protocol Contactable {
+    var email: String { get }
+}
+
+// Function requires a type that satisfies BOTH Named AND Aged
+func printBirthdayCard(for person: any Named & Aged) {
+    print("Happy Birthday, \\(person.name)! You are \\(person.age) today.")
+}
+
+// Typealiases can make common compositions readable:
+// (Just like standard library: typealias Codable = Encodable & Decodable)
+typealias PersonProfile = Named & Aged & Contactable
+
+struct Employee: PersonProfile {
+    let name: String
+    let age: Int
+    let email: String
+}
+
+let dev = Employee(name: "Liam", age: 29, email: "liam@example.com")
+printBirthdayCard(for: dev) // "Happy Birthday, Liam! You are 29 today."`,
+      },
+      {
+        type: 'heading',
+        id: 'h-associated-types',
+        level: 2,
+        content: 'Associated types: Protocols with generics',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-associated-types-1',
+        content: 'Normal structs and classes can use angle brackets for generics (e.g. `struct Stack<Element>`). Protocols cannot use angle brackets for type parameters. Instead, protocols define generic requirements using the `associatedtype` keyword.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-associated-types-2',
+        content: 'An **associated type** acts as a placeholder name for a type used as part of the protocol. Conforming types provide the actual type either implicitly (via type inference from method arguments/return types) or explicitly using `typealias`.',
+      },
+      {
+        type: 'code',
+        id: 'code-associated-types',
+        language: 'swift',
+        caption: 'associatedtype in a Container protocol',
+        content: `protocol Cache {
+    associatedtype Key: Hashable  // Type constraint on the associatedtype
+    associatedtype Value
+    
+    mutating func set(_ value: Value, for key: Key)
+    func get(key: Key) -> Value?
+}
+
+struct MemoryCache<K: Hashable, V>: Cache {
+    // The compiler infers 'typealias Key = K' and 'typealias Value = V'
+    // from the dictionary and method signatures:
+    private var storage: [K: V] = [:]
+    
+    mutating func set(_ value: V, for key: K) {
+        storage[key] = value
+    }
+    
+    func get(key: K) -> V? {
+        storage[key]
+    }
+}
+
+var tokenCache = MemoryCache<String, String>()
+tokenCache.set("bearer_abc123", for: "auth_token")
+print(tokenCache.get(key: "auth_token") ?? "none") // "bearer_abc123"`,
+      },
+      {
+        type: 'callout',
+        id: 'c-primary-associated',
+        variant: 'tip',
+        title: 'Primary Associated Types (Swift 5.7+ / Swift 6)',
+        content: 'Swift 5.7 introduced **Primary Associated Types**, letting you write `protocol Cache<Key, Value>` similar to standard generics. This allows you to write clean type constraints like `some Cache<String, User>` without painful type erasure.',
+      },
+      {
+        type: 'heading',
+        id: 'h-some-vs-any',
+        level: 2,
+        content: 'Modern Swift: some Protocol vs any Protocol',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-some-vs-any-1',
+        content: 'Starting in Swift 5.7 and enforced strictly in Swift 6, you must use either `some Protocol` (an **opaque type**) or `any Protocol` (an **existential type**). Understanding the difference is vital for writing performant Swift and answering senior-level interview questions.',
+      },
+      {
+        type: 'table',
+        id: 'table-some-vs-any',
+        caption: 'Comparison: some Protocol vs any Protocol',
+        headers: ['Feature', 'some Protocol (Opaque Type)', 'any Protocol (Existential Box)'],
+        rows: [
+          { cells: ['Underlying Type', 'One specific concrete type known at compile time', 'Can hold any conforming type at runtime'] },
+          { cells: ['Dispatch', 'Static dispatch (inlinable, zero overhead)', 'Dynamic dispatch via witness tables'] },
+          { cells: ['Memory Cost', 'Stored inline, zero allocation overhead', 'Existential container (3-word buffer + heap allocation if large)'] },
+          { cells: ['Heterogeneous Arrays', '❌ No (all elements must be the same concrete type)', '✅ Yes (e.g. [any Drawable] can mix Circle, Square)'] },
+          { cells: ['Primary Use Case', 'Function return types (SwiftUI body), parameters', 'Mixed collections, dynamic plugin systems'] },
+        ],
+      },
+      {
+        type: 'code',
+        id: 'code-some-vs-any',
+        language: 'swift',
+        caption: 'some vs any in practice',
+        content: `protocol Shape {
+    func draw()
+}
+
+struct Circle: Shape {
+    func draw() { print("⚪️") }
+}
+
+struct Square: Shape {
+    func draw() { print("⬛️") }
+}
+
+// 'some Shape' — compiler knows the exact type; fast, inlinable
+func makeDefaultShape() -> some Shape {
+    Circle() // Must return ONE concrete type consistently
+}
+
+// 'any Shape' — existential box that can hold mixed shapes
+let mixedShapes: [any Shape] = [Circle(), Square(), Circle()]
+for shape in mixedShapes {
+    shape.draw() // Dynamically dispatched
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Attempting to declare a stored property inside a protocol — protocols only define `{ get }` or `{ get set }` requirements; storage belongs to the conforming types.',
+          'Missing `AnyObject` on delegate protocols — attempting to use `weak var delegate: MyDelegate?` causes a compiler error because `weak` requires reference types.',
+          'Assuming methods in protocol extensions are always dynamically dispatched — if a method is not declared in the protocol definition, calling it on an existential variable will statically call the extension implementation, ignoring any concrete override.',
+          'Forgetting `mutating` on protocol method requirements — structs and enums cannot modify internal state in a protocol method unless the protocol declared it as `mutating func`.',
+          'Using `any Protocol` by default everywhere — existentials incur box allocation and dynamic dispatch costs; use `some Protocol` unless you genuinely need runtime polymorphism or heterogeneous collections.',
+          'Omitting `required` on an initializer implemented by a non-final class — classes conforming to a protocol with an `init` requirement must mark it `required init` so all future subclasses also satisfy the protocol.',
+        ],
       },
       {
         type: 'interview',
         id: 'interview',
         relevance: 'high',
         questions: [
-          'How does protocol-oriented programming differ from OOP?',
-          'What is a protocol with an associated type?',
-          'What is type erasure and when do you need it?',
-          'What is the difference between a protocol constraint and a protocol conformance?',
+          'What is Protocol-Oriented Programming (POP) and how does it compare to OOP class inheritance?',
+          'What is the difference between a method declared in a protocol vs a method only defined in a protocol extension?',
+          'Why do delegate protocols in iOS need to inherit from AnyObject?',
+          'What is an associated type in Swift, and how do Primary Associated Types work?',
+          'Explain the difference between some Protocol and any Protocol in modern Swift.',
+          'Why must value types mark protocol methods with mutating, and what happens when a class conforms?',
+          'Why does a non-final class require the `required` keyword when implementing a protocol initializer?',
         ],
       },
-      { type: 'relatedTopics', id: 'related', topicIds: ['swift-generics', 'arch-di'] },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-properties', 'swift-struct-vs-class', 'swift-generics', 'swift-some-vs-any', 'arch-di'],
+      },
     ],
   },
 
