@@ -12,6 +12,7 @@ import {
   Zap,
   Bookmark,
   BarChart3,
+  Terminal,
   Settings,
   LogOut,
 } from 'lucide-react';
@@ -25,6 +26,7 @@ const iconMap = {
   Zap,
   Bookmark,
   BarChart3,
+  Terminal,
 } as const;
 
 // Custom badges and topic indicators matching screenshot exactly
