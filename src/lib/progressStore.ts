@@ -6,6 +6,8 @@
 
 import { useSyncExternalStore, useCallback } from 'react';
 import type { LocalProgressRecord } from '@/types';
+import { topicRepository } from '@/data/topics/index';
+import { curriculumRepository } from '@/data/curriculum';
 
 const STORAGE_KEY = 'swiftcraft_progress';
 
@@ -55,17 +57,64 @@ export function getTopicProgress(topicId: string): LocalProgressRecord | null {
   return safeGetAll()[topicId] ?? null;
 }
 
-export function setTopicProgress(topicId: string, progress: number): void {
+export function setTopicProgress(
+  topicId: string,
+  progressOrData: number | Partial<LocalProgressRecord>
+): void {
   const all = safeGetAll();
   const existing = all[topicId];
-  all[topicId] = {
-    topicId,
-    completed: existing?.completed ?? false,
-    progress: Math.min(100, Math.max(0, Math.round(progress))),
-    lastViewedAt: new Date().toISOString(),
-  };
+  if (typeof progressOrData === 'number') {
+    all[topicId] = {
+      topicId,
+      completed: existing?.completed ?? false,
+      progress: Math.min(100, Math.max(0, Math.round(progressOrData))),
+      lastViewedAt: new Date().toISOString(),
+    };
+  } else {
+    all[topicId] = {
+      topicId,
+      completed: progressOrData.completed ?? existing?.completed ?? false,
+      progress:
+        progressOrData.progress !== undefined
+          ? Math.min(100, Math.max(0, Math.round(progressOrData.progress)))
+          : existing?.progress ?? 0,
+      lastViewedAt: progressOrData.lastViewedAt ?? new Date().toISOString(),
+    };
+  }
   safeSet(all);
   notify();
+}
+
+export function recordTopicView(topicId: string): void {
+  const existing = getTopicProgress(topicId);
+  setTopicProgress(topicId, {
+    ...existing,
+    lastViewedAt: new Date().toISOString(),
+  });
+}
+
+export function getLastViewedTopic(): { topicId: string; category: string; slug: string } | null {
+  const allProgress = safeGetAll();
+
+  const sorted = Object.entries(allProgress)
+    .filter(([, data]) => Boolean(data?.lastViewedAt))
+    .sort((a, b) => new Date(b[1].lastViewedAt).getTime() - new Date(a[1].lastViewedAt).getTime());
+
+  if (sorted.length === 0) return null;
+
+  const [topicId] = sorted[0];
+
+  const artTopic = topicRepository.getTopicById(topicId);
+  if (artTopic) {
+    return { topicId, category: artTopic.category, slug: artTopic.slug };
+  }
+
+  const currTopic = curriculumRepository.getTopicById(topicId);
+  if (currTopic) {
+    return { topicId, category: currTopic.domainId, slug: currTopic.slug };
+  }
+
+  return null;
 }
 
 export function markTopicComplete(topicId: string): void {

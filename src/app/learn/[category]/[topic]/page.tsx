@@ -1,6 +1,6 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Clock, CheckCircle2, MessageSquare, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
@@ -14,7 +14,7 @@ import { ArticleTOCDesktop, ArticleTOCMobile } from '@/components/learn/ArticleT
 import { PreviousNext } from '@/components/learn/PreviousNext';
 import { topicRepository, categoryMeta } from '@/data/topics/index';
 import { CURRICULUM_TOPICS, CURRICULUM_DOMAINS } from '@/data/curriculum';
-import { markTopicComplete, useIsTopicComplete } from '@/lib/progressStore';
+import { markTopicComplete, useIsTopicComplete, recordTopicView } from '@/lib/progressStore';
 
 interface TopicPageProps {
   params: Promise<{ category: string; topic: string }>;
@@ -44,6 +44,12 @@ export default function TopicPage({ params }: TopicPageProps) {
   const topicId = artTopic?.id ?? curriculumTopic?.id ?? '';
   const completed = useIsTopicComplete(topicId);
 
+  useEffect(() => {
+    if (topicId) {
+      recordTopicView(topicId);
+    }
+  }, [topicId]);
+
   const handleMarkComplete = () => {
     markTopicComplete(topicId);
   };
@@ -59,7 +65,7 @@ export default function TopicPage({ params }: TopicPageProps) {
           <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-tertiary mb-6 flex-wrap">
-              <Link href="/learn" className="hover:text-text-primary transition-colors">Learn</Link>
+              <Link href="/learn?browse=1" className="hover:text-text-primary transition-colors">Learn</Link>
               <ChevronRight className="w-3 h-3 shrink-0" aria-hidden="true" />
               <Link href={`/learn/${category}`} className="hover:text-text-primary transition-colors">
                 {categoryLabel}
@@ -148,7 +154,7 @@ export default function TopicPage({ params }: TopicPageProps) {
       <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-400 mb-6 flex-wrap">
-          <Link href="/learn" className="hover:text-white transition-colors">Learn</Link>
+          <Link href="/learn?browse=1" className="hover:text-white transition-colors">Learn</Link>
           <ChevronRight className="w-3 h-3 shrink-0" />
           <Link href={`/learn/${category}`} className="hover:text-white transition-colors capitalize">
             {categoryLabel}

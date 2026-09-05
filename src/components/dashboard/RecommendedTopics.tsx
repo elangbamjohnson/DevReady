@@ -98,7 +98,7 @@ export default function RecommendedTopics() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white tracking-tight">Recommended Topics</h2>
         <Link
-          href="/learn"
+          href="/learn?browse=1"
           className="text-sm font-medium text-violet-500 hover:text-violet-400 transition-colors cursor-pointer"
         >
           View all
