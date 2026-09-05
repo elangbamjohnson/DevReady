@@ -3418,4 +3418,421 @@ if let value = name {
       { type: 'relatedTopics', id: 'related', topicIds: ['swift-struct-vs-class', 'swift-error-handling', 'swift-control-flow'] },
     ],
   },
+
+  // ─── Stored, Computed & Lazy Properties with Observers ───────────────────────
+  {
+    id: 'swift-properties',
+    slug: 'properties-and-observers',
+    title: 'Stored, Computed \u0026 Lazy Properties with Observers',
+    category: 'swift',
+    group: 'Core Object-Oriented \u0026 Value Types',
+    description: 'Stored, computed, and lazy properties — plus willSet/didSet observers, static/class properties, and when each category applies in real Swift code.',
+    difficulty: 'foundational',
+    estimatedTime: 28,
+    language: 'swift',
+    version: { language: 'Swift', version: '6', minimumVersion: '1.0', status: 'current', lastReviewed: '2026-09-05' },
+    interviewRelevance: 'high',
+    tags: ['properties', 'computed-properties', 'observers', 'lazy', 'willSet', 'didSet', 'static', 'property-wrappers'],
+    relatedTopics: ['swift-enums', 'swift-struct-vs-class', 'swift-closures'],
+    furtherReading: [
+      {
+        title: 'Properties — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/properties',
+        source: 'swift-org',
+      },
+      {
+        title: 'propertyWrapper — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/propertywrapper',
+        source: 'apple-developer',
+      },
+    ],
+    previousTopic: 'swift-enums',
+    nextTopic: 'swift-protocols',
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Swift has three kinds of properties: **stored** (hold a value in memory), **computed** (calculate a value on demand — no storage), and **lazy** (stored, but not initialized until first access). On top of stored properties you can attach **observers** (`willSet` and `didSet`) to react whenever the value changes. Observers do **not** fire during `init`. `static` and `class` properties belong to the type itself, not to any instance.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why properties matter',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content: 'Properties are the building blocks of any Swift type. Every struct, class, and enum you write exposes state and behaviour through properties. Choosing the *right kind* of property — stored vs computed, lazy vs eager, instance vs static — directly affects correctness, performance, and the readability of your code.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'More importantly, Swift properties come with powerful tools out of the box: observers that react to changes, lazy initialization that defers expensive work, and property wrappers that package recurring patterns (like `@State` in SwiftUI or `@Published` in Combine) into a clean, reusable annotation. Understanding these mechanics is fundamental to writing idiomatic Swift.',
+      },
+      {
+        type: 'heading',
+        id: 'h-stored',
+        level: 2,
+        content: 'Stored properties',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-stored-1',
+        content: 'A **stored property** allocates actual memory to hold a value. It is the most basic kind. You declare it with `var` (mutable) or `let` (constant after initialization). Stored properties live on the stack for value types (structs, enums) and on the heap for reference types (classes).',
+      },
+      {
+        type: 'code',
+        id: 'code-stored',
+        language: 'swift',
+        caption: 'Stored properties — var is mutable, let is constant',
+        content: `struct User {
+    let id: UUID          // constant — cannot change after init
+    var name: String      // variable — can be mutated
+    var age: Int = 0      // stored with a default value
+}
+
+var user = User(id: UUID(), name: "Alice", age: 28)
+user.name = "Alicia"   // ✅ fine — 'name' is var
+// user.id = UUID()    // ❌ compile error — 'id' is let`,
+      },
+      {
+        type: 'callout',
+        id: 'c-let-struct',
+        variant: 'important',
+        title: 'let on a struct instance freezes everything',
+        content: 'If you declare a struct instance as `let`, **all** its stored properties become immutable — even the ones declared as `var` inside the struct. This is because structs are value types: the `let` binding protects the entire value, not just a reference.',
+      },
+      {
+        type: 'heading',
+        id: 'h-computed',
+        level: 2,
+        content: 'Computed properties',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-computed-1',
+        content: 'A **computed property** has no backing storage. Instead it runs a `get` block (and optionally a `set` block) every time it is accessed. Think of it as a property-shaped function — it gives you a clean, readable syntax for values that are always derived from other state.',
+      },
+      {
+        type: 'code',
+        id: 'code-computed',
+        language: 'swift',
+        caption: 'Computed property with get and set',
+        content: `struct Circle {
+    var radius: Double   // stored — this is the source of truth
+
+    // Computed — derived from radius, no storage of its own
+    var diameter: Double {
+        get { radius * 2 }
+        set { radius = newValue / 2 }  // newValue is the implicit parameter name
+    }
+
+    // Read-only computed property — get-only, shorthand syntax
+    var area: Double {
+        Double.pi * radius * radius
+    }
+}
+
+var c = Circle(radius: 5)
+print(c.diameter)  // 10.0
+c.diameter = 20    // calls the setter → radius becomes 10
+print(c.area)      // 314.159...`,
+      },
+      {
+        type: 'callout',
+        id: 'c-computed-no-storage',
+        variant: 'tip',
+        title: 'Computed properties run every time you access them',
+        content: 'Because a computed property has no backing storage, its `get` block runs fresh on every access. If the calculation is expensive (e.g., parsing a large string), consider caching the result in a stored property and only recalculating when needed. For cheap derivations this is fine — and often preferred over storing derived state that can get out of sync.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-computed-2',
+        content: 'Computed properties must always be declared as `var`. Even a read-only computed property is declared `var` — the compiler understands from the absence of a setter that it cannot be set from outside.',
+      },
+      {
+        type: 'heading',
+        id: 'h-lazy',
+        level: 2,
+        content: 'Lazy properties',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-lazy-1',
+        content: 'A **lazy** stored property is not initialized until the first time it is accessed. This is useful when the initial value is expensive to compute and may never be needed, or when the initial value depends on `self` (which is not yet fully available during normal property initialization).',
+      },
+      {
+        type: 'code',
+        id: 'code-lazy',
+        language: 'swift',
+        caption: 'lazy delays initialization until first access',
+        content: `class DataProcessor {
+    var inputData: [Int]
+
+    // This closure runs ONLY the first time 'result' is accessed
+    lazy var result: [Int] = {
+        print("Computing... (expensive)")
+        return self.inputData.map { $0 * 2 }
+    }()
+
+    init(data: [Int]) {
+        self.inputData = data
+        // 'result' is NOT computed here — only when first accessed
+    }
+}
+
+let processor = DataProcessor(data: [1, 2, 3])
+// No computation yet...
+print(processor.result)  // "Computing..." is printed NOW → [2, 4, 6]
+print(processor.result)  // No "Computing..." — already stored, returned directly`,
+      },
+      {
+        type: 'callout',
+        id: 'c-lazy-rules',
+        variant: 'warning',
+        title: 'Two rules for lazy: must be var, not thread-safe',
+        content: '**1. `lazy` must be `var`** — because the property starts as nil and is mutated on first access. `let` cannot be mutated after initialization, so `lazy let` is illegal. **2. `lazy` is not thread-safe** — if two threads access the property simultaneously before it is initialized, the closure may execute twice, causing a race condition. Use `lazy` only from a single-threaded context, or add your own synchronization.',
+      },
+      {
+        type: 'heading',
+        id: 'h-observers',
+        level: 2,
+        content: 'Property observers — willSet and didSet',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-observers-1',
+        content: '**Property observers** let you run code *before* or *after* a stored property changes. `willSet` fires just before the new value is stored — you get `newValue` (the incoming value). `didSet` fires right after — you get `oldValue` (what was there before). You can use both, or just one.',
+      },
+      {
+        type: 'code',
+        id: 'code-observers',
+        language: 'swift',
+        caption: 'willSet and didSet — react to changes on a stored property',
+        content: `class TemperatureSensor {
+    var temperature: Double = 0 {
+        willSet {
+            // newValue is implicit — the value about to be stored
+            print("About to change from \\(temperature) to \\(newValue)°")
+        }
+        didSet {
+            // oldValue is implicit — the value that was just replaced
+            print("Changed from \\(oldValue) to \\(temperature)°")
+            if temperature > 100 {
+                print("⚠️ Warning: overheating!")
+            }
+        }
+    }
+}
+
+var sensor = TemperatureSensor()
+sensor.temperature = 37   // willSet → "About to change from 0 to 37°"
+                          // didSet  → "Changed from 0 to 37°"
+sensor.temperature = 110  // triggers both observers + the warning`,
+      },
+      {
+        type: 'callout',
+        id: 'c-observers-init',
+        variant: 'important',
+        title: 'Observers do NOT fire during initialization',
+        content: 'When a stored property is set inside `init`, neither `willSet` nor `didSet` fire. Swift deliberately skips observers during initialization to avoid running side-effect code on a half-constructed object. They also do not fire when you pass a property as an `inout` parameter — the observers fire only on the final write-back when the function returns.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-observers-2',
+        content: 'Observers work on both class and struct properties. In subclasses, you can even add observers to inherited stored properties — the subclass observer fires in addition to (not instead of) the parent\'s setter.',
+      },
+      {
+        type: 'code',
+        id: 'code-observers-subclass',
+        language: 'swift',
+        caption: 'Subclass observers augment the parent property without replacing it',
+        content: `class Animal {
+    var name: String = "" {
+        didSet { print("Animal name set to \\(name)") }
+    }
+}
+
+class Dog: Animal {
+    override var name: String {
+        didSet { print("Dog name set to \\(name)") }
+        // Both this observer AND Animal's observer fire on each change
+    }
+}
+
+let dog = Dog()
+dog.name = "Rex"
+// Prints:
+//   "Dog name set to Rex"
+//   "Animal name set to Rex"`,
+      },
+      {
+        type: 'heading',
+        id: 'h-static',
+        level: 2,
+        content: 'static and class properties',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-static-1',
+        content: 'Instance properties belong to each individual object — every `User` gets its own `name`. **Type properties** (using `static` or `class`) belong to the type itself and are shared across all instances. There is only ever one copy, regardless of how many instances you create.',
+      },
+      {
+        type: 'code',
+        id: 'code-static',
+        language: 'swift',
+        caption: 'static vs class — type-level properties',
+        content: `struct AppConfig {
+    // static stored property — one value for the whole type
+    static var baseURL: String = "https://api.example.com"
+
+    // static computed property
+    static var timeout: TimeInterval { 30.0 }
+}
+
+print(AppConfig.baseURL)  // no instance needed — accessed on the type
+AppConfig.baseURL = "https://api.staging.example.com"
+
+// In a class, you can use 'class' instead of 'static' for computed properties
+// This allows subclasses to override them
+class Vehicle {
+    class var description: String { "Generic vehicle" }
+}
+
+class Car: Vehicle {
+    override class var description: String { "Car" }  // ✅ override allowed
+}
+
+// 'static' computed properties in a class are final — cannot be overridden
+class Truck: Vehicle {
+    // override static var ... // ❌ static is implicitly final — compile error
+}`,
+      },
+      {
+        type: 'callout',
+        id: 'c-static-lazy',
+        variant: 'info',
+        title: 'static stored properties are lazily initialized by default',
+        content: '`static` stored properties in Swift are automatically lazy — they are initialized on first access, not at program startup. They are also thread-safe by default (unlike instance `lazy` properties). This makes `static let` a great way to implement the Singleton pattern safely.',
+      },
+      {
+        type: 'heading',
+        id: 'h-property-wrappers',
+        level: 2,
+        content: 'Property wrappers — the pattern behind @State and @Published',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-wrapper-1',
+        content: 'A **property wrapper** is a struct (or class, or enum) that wraps a stored property and adds custom read/write behaviour through a required `wrappedValue`. You use them via the `@` annotation syntax. Every time you use `@State` in SwiftUI or `@Published` in Combine, you are using a property wrapper.',
+      },
+      {
+        type: 'code',
+        id: 'code-wrapper',
+        language: 'swift',
+        caption: 'Building a custom property wrapper — @Clamped',
+        content: `// A property wrapper that clamps a value between min and max
+@propertyWrapper
+struct Clamped {
+    private var value: Int
+    let range: ClosedRange<Int>
+
+    var wrappedValue: Int {
+        get { value }
+        set { value = min(max(newValue, range.lowerBound), range.upperBound) }
+    }
+
+    init(wrappedValue: Int, _ range: ClosedRange<Int>) {
+        self.range = range
+        self.value = min(max(wrappedValue, range.lowerBound), range.upperBound)
+    }
+}
+
+struct Player {
+    @Clamped(0...100) var health: Int = 100
+    @Clamped(0...10)  var lives: Int = 3
+}
+
+var player = Player()
+player.health = 120   // clamped → remains 100
+player.health = -5    // clamped → becomes 0
+player.lives = 99     // clamped → becomes 10
+print(player.health)  // 0
+print(player.lives)   // 10`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-wrapper-2',
+        content: 'The `$` prefix gives you access to the **projected value** — an optional secondary value a property wrapper can expose. For example, `$myTextField` in SwiftUI gives you the `Binding<String>` behind a `@State` property, not the `String` itself. The projected value is what `@State`, `@Binding`, and `@Published` expose for two-way data flow.',
+      },
+      {
+        type: 'code',
+        id: 'code-projected-value',
+        language: 'swift',
+        caption: 'projectedValue — the $ prefix in property wrappers',
+        content: `@propertyWrapper
+struct Logged<T> {
+    private var value: T
+    private(set) var log: [String] = []
+
+    var wrappedValue: T {
+        get { value }
+        set {
+            log.append("Changed to \\(newValue)")
+            value = newValue
+        }
+    }
+
+    // projectedValue — accessed via $property syntax
+    var projectedValue: [String] { log }
+
+    init(wrappedValue: T) { self.value = wrappedValue }
+}
+
+struct Settings {
+    @Logged var theme: String = "dark"
+}
+
+var s = Settings()
+s.theme = "light"
+s.theme = "system"
+print(s.theme)    // "system"
+print(s.$theme)   // ["Changed to light", "Changed to system"]`,
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'l-common-mistakes',
+        ordered: false,
+        items: [
+          'Expecting `didSet` to fire during `init` — it does not. Observers are skipped during initialization to avoid side effects on a partially-constructed object.',
+          'Assuming `lazy` is thread-safe — it is not. If two threads race to first-access a `lazy` property, the initializer can run twice. Add your own locking if needed.',
+          'Declaring a computed property with `let` — computed properties must be `var`, even read-only ones.',
+          'Using a computed property for expensive work without caching — since `get` runs on every access, a costly computation in a computed property will re-run every time you read it.',
+          'Confusing `static` and `class` for computed properties in classes — `static` is final (no subclass override), `class` allows overriding. For stored properties in a class, only `static` is valid.',
+          'Forgetting that `lazy` must be `var` — the compiler will tell you, but understanding why matters: the property starts nil and is mutated on first access, which requires mutability.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'What is the difference between a stored property and a computed property?',
+          'When do `willSet` and `didSet` observers NOT fire?',
+          'Why must a `lazy` property always be declared as `var`?',
+          'What is the difference between `static` and `class` for type-level properties?',
+          'What is a property wrapper and what problem does it solve?',
+          'What does the `$` prefix give you access to in a property wrapper?',
+        ],
+      },
+      { type: 'relatedTopics', id: 'related', topicIds: ['swift-enums', 'swift-struct-vs-class', 'swift-closures'] },
+    ],
+  },
 ];
