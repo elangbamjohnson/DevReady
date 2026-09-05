@@ -2906,7 +2906,7 @@ do {
       },
     ],
     previousTopic: 'swift-properties',
-    nextTopic: 'swift-generics',
+    nextTopic: 'swift-access-control',
     content: [
       {
         type: 'quickAnswer',
@@ -3417,6 +3417,368 @@ for shape in mixedShapes {
     ],
   },
 
+  // ─── Access Control ───────────────────────────────────────────────────────
+  {
+    id: 'swift-access-control',
+    slug: 'access-control',
+    title: 'Access Control: private, fileprivate, internal, package, public, open',
+    category: 'swift',
+    group: 'Core Object-Oriented & Value Types',
+    description:
+      'The visibility keywords that control what parts of your code can see and use a given type, property, or method — from the narrowest (private) to the widest (open).',
+    difficulty: 'intermediate',
+    estimatedTime: 20,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'high',
+    tags: [
+      'access-control',
+      'private',
+      'fileprivate',
+      'internal',
+      'package',
+      'public',
+      'open',
+      'encapsulation',
+      'modules',
+    ],
+    furtherReading: [
+      {
+        title: 'Access Control — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/accesscontrol',
+        source: 'swift-org',
+      },
+    ],
+    previousTopic: 'swift-protocols',
+    nextTopic: 'swift-generics',
+    relatedTopics: ['swift-struct-vs-class', 'swift-protocols', 'swift-generics'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content:
+          'Access control keywords determine which parts of your code can see and use a type, property, method, or initializer. From most restrictive to least: `private`, `fileprivate`, `internal` (the default), `package`, `public`, and `open`. Getting this right matters more as your codebase grows — it\'s how you hide implementation details and only expose what\'s actually meant to be used from outside.',
+      },
+      {
+        type: 'heading',
+        id: 'h-why',
+        level: 2,
+        content: 'Why does it matter?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-1',
+        content:
+          'In a small script, nobody thinks about access control — everything is visible to everything else, and that\'s fine at that scale. But as soon as your codebase has multiple files, multiple developers, or is packaged as a framework/library that other code depends on, visibility becomes a real design decision.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-2',
+        content: 'Two big reasons this matters:',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-encapsulation',
+        content:
+          '**Encapsulation.** If a type\'s internal implementation details are all `private`, you can freely refactor how it works internally without breaking anything that uses it — because nothing outside could see those details in the first place. If everything is exposed, any internal change risks breaking something else that (perhaps accidentally) depended on it.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-why-frameworks',
+        content:
+          '**API surface for frameworks.** If you\'re building a Swift Package that other projects will import, every `public` or `open` declaration becomes a promise — a contract that external code might depend on. The more you expose, the harder it becomes to change later without breaking your consumers. This is why professional framework design defaults toward the *most restrictive* access level that still works, and only widens it when there\'s a real reason to.',
+      },
+      {
+        type: 'heading',
+        id: 'h-how',
+        level: 2,
+        content: 'How does it work?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-how-intro',
+        content:
+          'Swift has six access levels. Here they are from most restrictive to least, each with what it actually means:',
+      },
+      {
+        type: 'heading',
+        id: 'h-private',
+        level: 3,
+        content: 'private — visible only within the enclosing declaration',
+      },
+      {
+        type: 'code',
+        id: 'code-private',
+        language: 'swift',
+        content: `class BankAccount {
+    private var balance: Double = 0
+    
+    func deposit(_ amount: Double) {
+        balance += amount  // OK — same type
+    }
+}
+
+let account = BankAccount()
+// account.balance  // ❌ Compile error — balance is private`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-private-nuance',
+        content:
+          'Important nuance: since Swift 4, `private` also allows access from **extensions of the same type in the same file**:',
+      },
+      {
+        type: 'code',
+        id: 'code-private-ext',
+        language: 'swift',
+        content: `class BankAccount {
+    private var balance: Double = 0
+}
+
+extension BankAccount {
+    func printBalance() {
+        print(balance)  // ✅ OK — same file, same type, even though it's a different extension block
+    }
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-fileprivate',
+        level: 3,
+        content: 'fileprivate — visible anywhere in the same file',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-fileprivate-desc',
+        content:
+          'Unlike `private` (scoped to the declaration and its same-file extensions), `fileprivate` is scoped to the entire file, across *different* types:',
+      },
+      {
+        type: 'code',
+        id: 'code-fileprivate',
+        language: 'swift',
+        content: `class BankAccount {
+    fileprivate var balance: Double = 0
+}
+
+class AccountAuditor {
+    func audit(_ account: BankAccount) {
+        print(account.balance)  // ✅ OK — different type, but same file
+    }
+}
+// If AccountAuditor were in a different file, this would fail to compile`,
+      },
+      {
+        type: 'heading',
+        id: 'h-internal',
+        level: 3,
+        content: 'internal — the default, visible throughout the module',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-internal-desc',
+        content:
+          'If you don\'t write an access modifier at all, `internal` is what you get. It means "visible anywhere in this module (your app target, or this specific framework target), but not visible to anyone importing this module from outside."',
+      },
+      {
+        type: 'code',
+        id: 'code-internal',
+        language: 'swift',
+        content: `class BankAccount {  // implicitly internal
+    var balance: Double = 0  // implicitly internal
+}
+// Any file within the same app/module can use BankAccount and balance freely.
+// A different module that imports this one cannot see BankAccount at all.`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-internal-usage',
+        content:
+          'Most of your everyday app code never needs to think about access control beyond this default — `internal` is exactly right for code that\'s used across your app but isn\'t meant for outside consumers.',
+      },
+      {
+        type: 'heading',
+        id: 'h-package',
+        level: 3,
+        content: 'package — visible across modules within the same package (Swift 5.9+)',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-package-desc',
+        content:
+          'This is a more recent addition, aimed at multi-module Swift packages. `package` access lets code be visible across *different modules that are part of the same package*, without exposing it to external consumers who import the package:',
+      },
+      {
+        type: 'code',
+        id: 'code-package',
+        language: 'swift',
+        content: `// In module A (part of MyPackage)
+package struct InternalConfig {
+    package var debugMode: Bool
+}
+
+// In module B (also part of MyPackage) — can see InternalConfig
+// A separate project that imports MyPackage cannot see it at all`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-package-gap',
+        content:
+          'This solves a real gap: before `package` existed, you either had to make something `public` (exposing it to every external consumer too) or duplicate code across modules to keep it `internal`-only per-module. `package` gives you a middle ground: shared internally across your package\'s modules, hidden from everyone else.',
+      },
+      {
+        type: 'heading',
+        id: 'h-public',
+        level: 3,
+        content: 'public — visible to any module that imports this one',
+      },
+      {
+        type: 'code',
+        id: 'code-public',
+        language: 'swift',
+        content: `public class NetworkClient {
+    public var baseURL: URL
+    
+    public init(baseURL: URL) {
+        self.baseURL = baseURL
+    }
+    
+    public func fetch() { /* ... */ }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-public-desc',
+        content:
+          'External code that imports your framework can create `NetworkClient` instances and call `fetch()`. But — important — external code **cannot subclass `NetworkClient` or override its methods**, even though it\'s public. For that, you need `open`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-open',
+        level: 3,
+        content: 'open — visible AND subclassable/overridable from outside',
+      },
+      {
+        type: 'code',
+        id: 'code-open',
+        language: 'swift',
+        content: `open class NetworkClient {
+    open func fetch() { /* ... */ }
+}
+
+// In an external module that imports this framework:
+class CustomClient: NetworkClient {
+    override func fetch() {
+        // ✅ Only possible because NetworkClient and fetch() are 'open', not just 'public'
+    }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-open-desc',
+        content:
+          '`open` only applies to classes and their overridable members — it doesn\'t make sense for structs, enums, or final classes, since they can\'t be subclassed regardless.',
+      },
+      {
+        type: 'heading',
+        id: 'h-asymmetric',
+        level: 3,
+        content: 'Asymmetric access: private(set) and similar patterns',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-asymmetric-desc',
+        content:
+          'Sometimes you want a property to be readable from a wider scope than it\'s writable from — very common for exposing state that outside code should observe but not mutate directly:',
+      },
+      {
+        type: 'code',
+        id: 'code-asymmetric',
+        language: 'swift',
+        content: `class ScoreTracker {
+    private(set) var score: Int = 0
+    
+    func addPoint() {
+        score += 1  // Can modify from inside
+    }
+}
+
+let tracker = ScoreTracker()
+print(tracker.score)  // ✅ Readable from outside (internal by default)
+// tracker.score = 100  // ❌ Compile error — settable only from within ScoreTracker`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-asymmetric-usage',
+        content:
+          'This pattern (`private(set)`, or `internal(set)` on a `public` property) is one of the most useful access control tools in everyday Swift — it lets you expose read access widely while keeping write access tightly controlled, without needing a separate getter method.',
+      },
+      {
+        type: 'heading',
+        id: 'h-common-mistakes',
+        level: 2,
+        content: 'Common mistakes',
+      },
+      {
+        type: 'list',
+        id: 'list-common-mistakes',
+        ordered: false,
+        items: [
+          'Assuming `public` allows subclassing or overriding from other modules — it doesn\'t. Only `open` does. This trips people up constantly when designing frameworks.',
+          'Confusing `private` and `fileprivate` — remember: `private` is scoped to the declaration (plus same-file extensions of that type); `fileprivate` is scoped to the whole file, across different types.',
+          'Overusing `public`/`open` "just in case" — every public declaration is a promise to your framework\'s consumers. Default to the most restrictive level that works, and widen only when there\'s a real need.',
+          'Not knowing about `package` access and reaching for `public` unnecessarily in a multi-module package, exposing internal-only code to external consumers.',
+          'Forgetting that a property\'s setter can have a different (more restrictive) access level than its getter, via `private(set)` — leading to unnecessarily verbose custom getter/setter code when this would do the job.',
+          'Marking something `open` by default without a specific reason — `open` should be a deliberate design decision for extensibility, not a default habit.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-when-to-use',
+        level: 2,
+        content: 'When to use what',
+      },
+      {
+        type: 'list',
+        id: 'list-when-to-use',
+        ordered: false,
+        items: [
+          'Use `private` for implementation details that only the type itself (and its same-file extensions) should touch.',
+          'Use `fileprivate` when a small group of closely related types in the same file need to collaborate on shared state.',
+          'Use `internal` (the default) for the vast majority of your app code — anything shared across your app but not meant for outside consumers.',
+          'Use `package` when building a multi-module Swift package and you need visibility across your own modules without exposing it externally.',
+          'Use `public` for framework API you want external consumers to use directly, but don\'t want them extending via subclassing.',
+          'Use `open` only when you specifically want external code to be able to subclass or override — a deliberate extensibility decision, not a default.',
+          'Use `private(set)` (or similar) whenever you want to expose a value for reading more widely than you want to allow writing.',
+        ],
+      },
+      {
+        type: 'interview',
+        id: 'interview',
+        relevance: 'high',
+        questions: [
+          'What are Swift\'s six access control levels, from most to least restrictive?',
+          'What is the difference between private and fileprivate?',
+          'What is the difference between public and open, and why does this distinction exist?',
+          'What problem does the \'package\' access level solve, and when would you use it?',
+          'What does this code do, and why might you design a property this way?',
+          'Why does good framework design generally favor the most restrictive access level that still works, rather than making everything public?',
+          'Detail the 6 access levels in modern Swift, including open vs public and the package access level.',
+        ],
+      },
+      {
+        type: 'relatedTopics',
+        id: 'related',
+        topicIds: ['swift-struct-vs-class', 'swift-protocols', 'swift-generics'],
+      },
+    ],
+  },
+
   // ─── Generics ─────────────────────────────────────────────────────────────
   {
     id: 'swift-generics',
@@ -3432,7 +3794,7 @@ for shape in mixedShapes {
     interviewRelevance: 'high',
     tags: ['generics', 'type-constraints', 'opaque-types', 'some', 'any'],
     relatedTopics: ['swift-protocols', 'arch-di'],
-    previousTopic: 'swift-protocols',
+    previousTopic: 'swift-access-control',
     content: [
       {
         type: 'quickAnswer',
