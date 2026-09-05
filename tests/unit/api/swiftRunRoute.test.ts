@@ -154,7 +154,7 @@ describe('Swift Playground API Route (/api/swift/run)', () => {
     fetchSpy.mockRestore();
   });
 
-  it('handles wandbox failure gracefully', async () => {
+  it('handles wandbox failure by gracefully falling back to native runner', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
       throw new Error('Network timeout');
     });
@@ -162,13 +162,14 @@ describe('Swift Playground API Route (/api/swift/run)', () => {
     const req = new NextRequest('http://localhost/api/swift/run', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ code: 'print(1)' }),
+      body: JSON.stringify({ code: 'print("fallback worked")' }),
     });
 
     const res = await POST(req);
-    expect(res.status).toBe(502);
+    expect(res.status).toBe(200);
     const data = await res.json();
-    expect(data.error).toContain('Could not determine Swift compiler');
+    expect(data.output).toBe('fallback worked');
+    expect(data.kind).toBe('success');
 
     fetchSpy.mockRestore();
   });
