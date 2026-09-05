@@ -6,14 +6,11 @@
 // This guarantees that developers & students can always run Swift code reliably.
 
 import { NextRequest, NextResponse } from 'next/server';
-import { spawn } from 'child_process';
-import path from 'path';
-import fs from 'fs';
+import { runLocalSwift } from '@/lib/swiftRunner';
 
 const WANDBOX_LIST_URL = 'https://wandbox.org/api/list.json';
 const WANDBOX_COMPILE_URL = 'https://wandbox.org/api/compile.json';
 const WANDBOX_TIMEOUT_MS = 5000;
-const LOCAL_SWIFT_TIMEOUT_MS = 10000;
 
 // Maximum payload we accept from the client (16 KiB) to prevent abuse.
 const MAX_CODE_BYTES = 16_384;
@@ -33,15 +30,6 @@ interface WandboxCompileResponse {
   program_output?: string;
   program_error?: string;
   signal?: string;
-}
-
-interface RunOutcome {
-  kind: 'success' | 'compile' | 'runtime';
-  compiler: string;
-  output: string;
-  error: string;
-  exitCode: number;
-  signal: string | null;
 }
 
 // ── Helper: pick the newest Swift compiler from Wandbox ─────────────────────
@@ -67,75 +55,6 @@ async function resolveSwiftCompiler(): Promise<string> {
   }
 
   return swiftCompilers[0].name; // e.g. "swift-6.0.1"
-}
-
-// ── Helper: Local Swift runner fallback ─────────────────────────────────────
-
-function runLocalSwift(code: string): Promise<RunOutcome> {
-  return new Promise((resolve, reject) => {
-    try {
-      const cacheDir = path.join(process.cwd(), '.swift-cache');
-      try {
-        if (!fs.existsSync(cacheDir)) {
-          fs.mkdirSync(cacheDir, { recursive: true });
-        }
-      } catch {
-        // directory may already exist
-      }
-
-      const child = spawn('swift', ['-module-cache-path', cacheDir, '-'], {
-        timeout: LOCAL_SWIFT_TIMEOUT_MS,
-        stdio: ['pipe', 'pipe', 'pipe'],
-      });
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (chunk) => {
-        stdout += chunk.toString();
-      });
-
-      child.stderr.on('data', (chunk) => {
-        stderr += chunk.toString();
-      });
-
-      child.on('error', (err) => {
-        reject(err);
-      });
-
-      child.on('close', (code, signal) => {
-        const exitCode = code ?? (signal ? 137 : 0);
-        const trimmedStdout = stdout.trim();
-        const trimmedStderr = stderr.trim();
-
-        // Categorize compile vs runtime error
-        // Compile errors from `swift -` typically contain "<stdin>:line:col: error:"
-        // Runtime errors contain "Fatal error:" or a termination signal
-        let kind: 'success' | 'compile' | 'runtime';
-        if (exitCode === 0 && !signal) {
-          kind = 'success';
-        } else if (trimmedStderr.includes('error:') && !trimmedStderr.includes('Fatal error:')) {
-          kind = 'compile';
-        } else {
-          kind = 'runtime';
-        }
-
-        resolve({
-          kind,
-          compiler: 'Apple Swift 6 (native)',
-          output: trimmedStdout,
-          error: trimmedStderr,
-          exitCode,
-          signal: signal ?? null,
-        });
-      });
-
-      child.stdin.write(code);
-      child.stdin.end();
-    } catch (err) {
-      reject(err);
-    }
-  });
 }
 
 // ── POST handler ─────────────────────────────────────────────────────────────

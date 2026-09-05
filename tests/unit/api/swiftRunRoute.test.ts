@@ -1,6 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/swift/run/route';
+import { runLocalSwift } from '@/lib/swiftRunner';
+
+vi.mock('@/lib/swiftRunner', () => ({
+  runLocalSwift: vi.fn(),
+}));
 
 describe('Swift Playground API Route (/api/swift/run)', () => {
   beforeEach(() => {
@@ -159,6 +164,15 @@ describe('Swift Playground API Route (/api/swift/run)', () => {
       throw new Error('Network timeout');
     });
 
+    vi.mocked(runLocalSwift).mockResolvedValueOnce({
+      kind: 'success',
+      compiler: 'Apple Swift 6 (native)',
+      output: 'fallback worked',
+      error: '',
+      exitCode: 0,
+      signal: null,
+    });
+
     const req = new NextRequest('http://localhost/api/swift/run', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -170,6 +184,27 @@ describe('Swift Playground API Route (/api/swift/run)', () => {
     const data = await res.json();
     expect(data.output).toBe('fallback worked');
     expect(data.kind).toBe('success');
+
+    fetchSpy.mockRestore();
+  });
+
+  it('handles total failure when both wandbox and native runner fail', async () => {
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => {
+      throw new Error('Network timeout');
+    });
+
+    vi.mocked(runLocalSwift).mockRejectedValueOnce(new Error('Swift CLI unavailable'));
+
+    const req = new NextRequest('http://localhost/api/swift/run', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ code: 'print("test")' }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.error).toContain('Compiler backend is currently unreachable');
 
     fetchSpy.mockRestore();
   });
