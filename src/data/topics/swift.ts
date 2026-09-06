@@ -4670,4 +4670,345 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       { type: 'relatedTopics', id: 'related', topicIds: ['swift-enums', 'swift-struct-vs-class', 'swift-closures'] },
     ],
   },
+  // ─── Initialization & Deinitialization Rules ───────────────────────────────
+  {
+    id: 'swift-initialization',
+    slug: 'initialization-rules',
+    title: 'Initialization & Deinitialization Rules',
+    category: 'swift',
+    group: 'Core Object-Oriented & Value Types',
+    description: 'Understand the strict two-phase initialization rules in Swift, designated vs convenience initializers, and memory cleanup with deinit.',
+    difficulty: 'advanced',
+    estimatedTime: 25,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'high',
+    tags: ['init', 'deinit', 'designated', 'convenience', 'two-phase-initialization'],
+    furtherReading: [
+      {
+        title: 'Initialization — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/initialization',
+        source: 'swift-org',
+      },
+    ],
+    previousTopic: 'swift-properties',
+    nextTopic: 'swift-opaque-existential',
+    relatedTopics: ['swift-struct-vs-class', 'swift-memory-management'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Swift enforces strict rules to ensure every stored property has an initial value before use. Classes have designated initializers (which fully initialize the class and call super.init) and convenience initializers (which must delegate across to another initializer in the same class). `deinit` is called immediately before a class instance is deallocated to perform cleanup.',
+      },
+      {
+        type: 'heading',
+        id: 'h-two-phase',
+        level: 2,
+        content: 'Two-Phase Initialization',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-two-phase',
+        content: 'Class initialization in Swift happens in two phases. Phase 1 guarantees all stored properties are initialized (bottom-up). Phase 2 lets each class customize its properties before the new instance is considered ready for use (top-down). You cannot call `self` methods or read properties until Phase 1 is complete.',
+      },
+      {
+        type: 'code',
+        id: 'code-init',
+        language: 'swift',
+        content: `class Vehicle {
+    var wheels: Int
+    init(wheels: Int) {
+        self.wheels = wheels
+    }
+}
+
+class Car: Vehicle {
+    var color: String
+    
+    // Designated initializer
+    init(color: String) {
+        // Phase 1: Initialize subclass properties first
+        self.color = color
+        
+        // Phase 1: Delegate up to superclass
+        super.init(wheels: 4)
+        
+        // Phase 2: Now we can use 'self' safely
+        self.honk()
+    }
+    
+    // Convenience initializer
+    convenience init() {
+        self.init(color: "Red") // Must call designated init in same class
+    }
+    
+    func honk() { print("Beep!") }
+}`,
+      }
+    ],
+  },
+  // ─── Opaque Types vs Existential Containers ───────────────────────────────
+  {
+    id: 'swift-opaque-existential',
+    slug: 'opaque-vs-existential',
+    title: 'Opaque Types (some) vs Existential Containers (any)',
+    category: 'swift',
+    group: 'Generics & Type System',
+    description: 'The difference between returning a specific but hidden type (some) and returning a box that can hold any conforming type (any).',
+    difficulty: 'advanced',
+    estimatedTime: 20,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'high',
+    tags: ['some', 'any', 'opaque-types', 'existentials', 'performance'],
+    furtherReading: [
+      {
+        title: 'Opaque Types — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/opaquetypes',
+        source: 'swift-org',
+      },
+    ],
+    previousTopic: 'swift-initialization',
+    nextTopic: 'swift-type-erasure',
+    relatedTopics: ['swift-protocols', 'swift-generics'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: '`some Protocol` (Opaque Type) means the function returns ONE specific concrete type that conforms to the protocol, but the caller does not know what it is. The compiler knows, so it is fast and statically dispatched. `any Protocol` (Existential Type) is a dynamic "box" that can hold ANY type conforming to the protocol at runtime, incurring overhead for the box and dynamic dispatch.',
+      },
+      {
+        type: 'heading',
+        id: 'h-some',
+        level: 2,
+        content: 'Opaque Types (some)',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-some',
+        content: 'Opaque types are heavily used in SwiftUI (`some View`). They preserve type identity: the compiler knows the underlying type, so it can optimize the code, but you hide the complex nested generics from the caller.',
+      },
+      {
+        type: 'code',
+        id: 'code-some',
+        language: 'swift',
+        content: `func makeShape() -> some Shape {
+    // The compiler knows this is always a Circle, but the caller only sees 'Shape'
+    return Circle() 
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-any',
+        level: 2,
+        content: 'Existential Containers (any)',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-any',
+        content: '`any` was introduced in Swift 5.6 to make the performance cost of dynamic protocol types explicit. Use it when you actually need a heterogenous collection of different types that conform to a protocol.',
+      },
+      {
+        type: 'code',
+        id: 'code-any',
+        language: 'swift',
+        content: `// Can hold a Circle, a Square, etc., at the same time
+var shapes: [any Shape] = [Circle(), Square()]`,
+      }
+    ],
+  },
+  // ─── Type Erasure Patterns ──────────────────────────────────────────────────
+  {
+    id: 'swift-type-erasure',
+    slug: 'type-erasure',
+    title: 'Type Erasure Patterns in Swift',
+    category: 'swift',
+    group: 'Generics & Type System',
+    description: 'How to hide concrete types using wrapper structs (Any*) when protocols with associated types prevent you from using them as standard types.',
+    difficulty: 'advanced',
+    estimatedTime: 25,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'medium',
+    tags: ['AnySequence', 'AnyHashable', 'type-erasure', 'generics'],
+    furtherReading: [],
+    previousTopic: 'swift-opaque-existential',
+    nextTopic: 'swift-result-builders',
+    relatedTopics: ['swift-generics', 'swift-opaque-existential'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Before `any` protocols supported associated types (Swift 5.7+), protocols with `associatedtype` could only be used as generic constraints, not as types. Type erasure is a design pattern where you build a concrete wrapper struct (like `AnySequence`) that captures the underlying instance and forwards method calls to it, effectively "erasing" the specific underlying type while satisfying the compiler.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-legacy',
+        content: 'Note: With Swift 5.7 allowing `any Protocol` even when the protocol has associated types (Primary Associated Types), manual type erasure (writing `Any*` wrappers) is needed much less often. However, understanding it is critical for reading older codebases and SwiftUI internals (`AnyView`).',
+      },
+      {
+        type: 'code',
+        id: 'code-type-erasure',
+        language: 'swift',
+        content: `// A standard type-erased wrapper
+struct AnyAnimal {
+    private let _speak: () -> String
+    
+    init<T: Animal>(_ animal: T) {
+        // Capture the concrete type's method in a closure
+        self._speak = animal.speak
+    }
+    
+    func speak() -> String {
+        return _speak()
+    }
+}`,
+      }
+    ],
+  },
+  // ─── Result Builders & Domain-Specific Languages ────────────────────────────
+  {
+    id: 'swift-result-builders',
+    slug: 'result-builders',
+    title: 'Result Builders & Domain-Specific Languages',
+    category: 'swift',
+    group: 'Advanced Language Features',
+    description: 'How SwiftUI builds view hierarchies using @resultBuilder, and how you can write your own custom DSLs.',
+    difficulty: 'advanced',
+    estimatedTime: 20,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'medium',
+    tags: ['@resultBuilder', 'DSL', 'buildBlock'],
+    furtherReading: [],
+    previousTopic: 'swift-type-erasure',
+    nextTopic: 'swift-macros',
+    relatedTopics: ['swift-properties'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: '`@resultBuilder` is a Swift feature that allows you to collect a sequence of expressions into a single consolidated value, effectively letting you create custom Domain-Specific Languages (DSLs) like the SwiftUI view syntax. The compiler translates the clean, comma-less block syntax into calls to static methods like `buildBlock` on your builder type.',
+      },
+      {
+        type: 'code',
+        id: 'code-builder',
+        language: 'swift',
+        content: `@resultBuilder
+struct HTMLBuilder {
+    static func buildBlock(_ components: String...) -> String {
+        return components.joined(separator: "\\n")
+    }
+}
+
+func div(@HTMLBuilder content: () -> String) -> String {
+    return "<div>\\n" + content() + "\\n</div>"
+}
+
+let page = div {
+    "<h1>Hello</h1>"
+    "<p>World</p>"
+}
+// Compiler translates the closure contents to: HTMLBuilder.buildBlock("<h1>...</h1>", "<p>...</p>")`,
+      }
+    ],
+  },
+  // ─── Swift Macros ───────────────────────────────────────────────────────────
+  {
+    id: 'swift-macros',
+    slug: 'macros',
+    title: 'Swift Macros (Freestanding & Attached)',
+    category: 'swift',
+    group: 'Advanced Language Features',
+    description: 'Eliminate boilerplate by generating Swift code at compile time using AST-based macros introduced in Swift 5.9.',
+    difficulty: 'advanced',
+    estimatedTime: 20,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'low',
+    tags: ['macros', 'compile-time', 'AST', 'SwiftSyntax'],
+    furtherReading: [],
+    previousTopic: 'swift-result-builders',
+    nextTopic: 'swift-method-dispatch',
+    relatedTopics: ['swift-result-builders'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Swift Macros generate code at compile time. Unlike C macros (which are text replacement), Swift macros are AST-based plugins that parse Swift code via SwiftSyntax and inject new code. **Freestanding macros** appear on their own (like `#warning`), while **Attached macros** modify declarations they are attached to (like `@Observable`).',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-macro',
+        content: 'Macros are heavily used in modern Apple frameworks, such as SwiftData (`@Model`) and SwiftUI (`@Observable`), replacing complex boilerplate with a single attribute.',
+      }
+    ],
+  },
+  // ─── Method Dispatch ────────────────────────────────────────────────────────
+  {
+    id: 'swift-method-dispatch',
+    slug: 'method-dispatch',
+    title: 'Method Dispatch: Static, Dynamic, V-Tables & Witness Tables',
+    category: 'swift',
+    group: 'Under the Hood',
+    description: 'Deep dive into how Swift figures out which method implementation to call at runtime vs compile time.',
+    difficulty: 'advanced',
+    estimatedTime: 30,
+    language: 'swift',
+    version: {
+      language: 'Swift',
+      version: '6',
+      status: 'current',
+      lastReviewed: '2026-09-01',
+    },
+    interviewRelevance: 'high',
+    tags: ['dispatch', 'v-table', 'witness-table', 'static-dispatch', 'dynamic-dispatch', 'performance'],
+    furtherReading: [],
+    previousTopic: 'swift-macros',
+    nextTopic: 'objc-syntax', // or null if there is no Objective-C topic yet
+    relatedTopics: ['swift-struct-vs-class', 'swift-protocols'],
+    content: [
+      {
+        type: 'quickAnswer',
+        id: 'qa',
+        content: 'Dispatch is how the app finds which instructions to execute for a method call. **Static/Direct Dispatch** is determined at compile time (fastest). **Dynamic/Table Dispatch** is determined at runtime using Virtual Tables (for class inheritance) or Protocol Witness Tables (for protocol conformances). **Message Dispatch** uses the Objective-C runtime (slowest, but highly dynamic).',
+      },
+      {
+        type: 'heading',
+        id: 'h-breakdown',
+        level: 2,
+        content: 'Dispatch Mechanics Breakdown',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-breakdown',
+        content: '- **Value Types (Structs/Enums):** Static dispatch (unless hidden behind a protocol existential).\n- **Protocols:** Protocol Witness Table (dynamic), unless constrained generically (can be static).\n- **Classes:** Virtual Table (dynamic), unless marked `final` or `private` (can be optimized to static).\n- **Extensions:** Cannot be overridden. Methods in class extensions use Static Dispatch. Methods in protocol extensions provide default implementations.\n- **@objc dynamic:** Message Dispatch (Objective-C runtime).',
+      }
+    ],
+  }
 ];
