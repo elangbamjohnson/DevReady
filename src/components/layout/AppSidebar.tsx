@@ -78,7 +78,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col border-r border-border-default bg-surface-1 h-screen sticky top-0 shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
+        'hidden lg:flex flex-col border-r border-border-default bg-surface-1 h-screen sticky top-0 self-start shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
         isCollapsed ? 'w-[68px]' : 'w-60'
       )}
     >
