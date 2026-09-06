@@ -21,10 +21,14 @@ export function BottomNav() {
         {MOBILE_NAV_ITEMS.map((item) => {
           const Icon = iconMap[item.icon as keyof typeof iconMap];
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+          
+          const isInsideLearn = pathname.startsWith('/learn');
+          const href = item.label === 'Learn' && isInsideLearn ? '/learn?browse=1' : item.href;
+
           return (
             <li key={item.label}>
               <Link
-                href={item.href}
+                href={href}
                 className={cn(
                   'flex flex-col items-center gap-0.5 px-3 py-1 rounded-lg transition-colors',
                   isActive

@@ -21,6 +21,7 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible();
 
     // Verify localStorage has recorded the visit
+    await page.waitForTimeout(500); // allow progress-save logic to record it
     const stored = await page.evaluate(() => localStorage.getItem('swiftcraft_progress'));
     expect(stored).toContain('swift-optionals');
 
@@ -126,5 +127,29 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     await expect(codeBlock).toBeVisible();
     const restoredCodeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
     expect(Math.abs(restoredCodeBlockY - codeBlockY)).toBeLessThan(60);
+  });
+
+  test('Learn nav link resumes last topic when clicked from outside Learn', async ({ page }) => {
+    await page.goto('/learn/swift/optionals'); // establish a "last viewed" topic
+    await page.goto('/dashboard'); // navigate to Dashboard — now outside Learn
+    
+    // The top header is hidden on Home, but mobile nav or desktop sidebar might be visible.
+    // We can use the first visible Learn link in the layout.
+    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).first();
+    await learnNavLink.click({ force: true });
+    
+    await expect(page).toHaveURL(/\/learn\/swift\/optionals/); // resumed
+  });
+
+  test('Learn nav link shows browse list when clicked from inside Learn', async ({ page }) => {
+    await page.goto('/learn/swift/optionals'); // now inside Learn
+    
+    // Wait for the topic page to settle
+    await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible();
+
+    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).first();
+    await learnNavLink.click({ force: true });
+    
+    await expect(page).toHaveURL(/\/learn\?browse=1/); // browse list, not re-redirected
   });
 });

@@ -125,10 +125,13 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
               (item.href !== '/dashboard' && pathname.startsWith(item.href));
             const badge = navBadges[item.label];
 
+            const isInsideLearn = pathname.startsWith('/learn');
+            const href = item.label === 'Learn' && isInsideLearn ? '/learn?browse=1' : item.href;
+
             return (
               <li key={item.label}>
                 <Link
-                  href={item.href}
+                  href={href}
                   title={isCollapsed ? item.label : undefined}
                   className={cn(
                     'flex items-center py-2 rounded-lg text-sm transition-colors group',
