@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { PRODUCT_NAME, PRODUCT_TAGLINE } from '@/lib/constants';
 import './globals.css';
 
@@ -46,15 +47,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
-        <script
-          id="theme-init"
-          dangerouslySetInnerHTML={{
-            __html: `(function(){try{var theme=localStorage.getItem('theme');if(theme==='light'){document.documentElement.setAttribute('data-theme','light');}}catch(e){}})();`,
-          }}
-        />
-      </head>
-      <body className="antialiased" suppressHydrationWarning>{children}</body>
+
+      <body className="antialiased" suppressHydrationWarning>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {`
+            (function() {
+              try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'light') {
+                  document.documentElement.setAttribute('data-theme', 'light');
+                }
+              } catch(e) {}
+            })();
+          `}
+        </Script>
+        {children}
+      </body>
     </html>
   );
 }
