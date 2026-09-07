@@ -58,7 +58,7 @@ export default function RecentlyViewed() {
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-bold text-white tracking-tight">Recently Viewed</h2>
         <Link
-          href="/learn"
+          href="/learn?browse=1"
           className="text-violet-400 hover:text-violet-300 text-sm font-medium flex items-center gap-1 transition-colors cursor-pointer"
         >
           <span>See all</span>

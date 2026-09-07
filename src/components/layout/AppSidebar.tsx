@@ -78,7 +78,7 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden lg:flex flex-col border-r border-border-default bg-surface-1 h-screen sticky top-0 shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
+        'hidden lg:flex flex-col border-r border-border-default bg-surface-1 h-screen sticky top-0 self-start shrink-0 overflow-hidden transition-all duration-300 ease-in-out select-none',
         isCollapsed ? 'w-[68px]' : 'w-60'
       )}
     >
@@ -125,10 +125,13 @@ export default function AppSidebar({ isCollapsed = false }: AppSidebarProps) {
               (item.href !== '/dashboard' && pathname.startsWith(item.href));
             const badge = navBadges[item.label];
 
+            const isInsideLearn = pathname.startsWith('/learn');
+            const href = item.label === 'Learn' && isInsideLearn ? '/learn?browse=1' : item.href;
+
             return (
               <li key={item.label}>
                 <Link
-                  href={item.href}
+                  href={href}
                   title={isCollapsed ? item.label : undefined}
                   className={cn(
                     'flex items-center py-2 rounded-lg text-sm transition-colors group',

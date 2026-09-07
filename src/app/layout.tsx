@@ -47,7 +47,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+
+      <body className="antialiased" suppressHydrationWarning>
         <Script id="theme-init" strategy="beforeInteractive">
           {`
             (function() {
@@ -60,8 +61,8 @@ export default function RootLayout({
             })();
           `}
         </Script>
-      </head>
-      <body className="antialiased" suppressHydrationWarning>{children}</body>
+        {children}
+      </body>
     </html>
   );
 }
