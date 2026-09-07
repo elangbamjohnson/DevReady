@@ -5213,7 +5213,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "quickAnswer",
       "id": "qa",
-      "content": "Every stored property must be initialized before use — Swift guarantees this at compile time via **Two-Phase Initialization**. Designated initializers are the primary funnels through which class instances are created, delegating up to the superclass. Convenience initializers delegate across (`self.init`) to secondary configurations. Failable initializers (`init?`) return optional instances when prerequisites fail. Deinitializers (`deinit`) execute automatically when a class instance retain count drops to zero, guaranteeing deterministic cleanup of native resources."
+      "content": "Swift guarantees all properties are initialized before use via two-phase initialization. Designated initializers do the work; convenience initializers delegate to them. Failable initializers return optionals. Deinitializers run exactly once at deallocation, guaranteeing cleanup."
     },
     {
       "type": "heading",
@@ -5251,7 +5251,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-two-phase",
       "language": "swift",
       "caption": "Two-phase initialization in subclass and superclass hierarchies",
-      "content": "class Vehicle {\n    var brand: String\n    \n    init(brand: String) {\n        self.brand = brand\n        // Root class completes Phase 1\n    }\n}\n\nclass Car: Vehicle {\n    var numberOfDoors: Int\n    \n    init(brand: String, numberOfDoors: Int) {\n        // 1. Phase 1: Initialize subclass stored properties FIRST\n        self.numberOfDoors = numberOfDoors\n        \n        // 2. Phase 1: Delegate UP to superclass designated initializer\n        super.init(brand: brand)\n        \n        // 3. Phase 2: Now self is fully initialized! Safe to call instance methods\n        self.configureAlarmSystem()\n    }\n    \n    func configureAlarmSystem() {\n        print(\"Alarm enabled for \\(brand) with \\(numberOfDoors) doors.\")\n    }\n}"
+      "content": "class Vehicle {\n    var brand: String\n    \n    init(brand: String) {\n        self.brand = brand\n        // Root class completes Phase 1\n    }\n}\n\nclass Car: Vehicle {\n    var numberOfDoors: Int\n    \n    init(brand: String, numberOfDoors: Int) {\n        // 1. Phase 1: Initialize subclass stored properties FIRST\n        self.numberOfDoors = numberOfDoors\n        \n        // 2. Phase 1: Delegate UP to superclass designated initializer\n        super.init(brand: brand)\n        \n        // 3. Phase 2: Now self is fully initialized! Safe to call instance methods\n        self.configureAlarmSystem()\n    }\n    \n    func configureAlarmSystem() {\n        print(\"Alarm enabled for \\(brand) with \\(numberOfDoors) doors.\")\n    }\n}\n\nlet car = Car(brand: \"Tesla\", numberOfDoors: 4)\nprint(\"\\(car.brand) has \\(car.numberOfDoors) doors\")\n// prints: Alarm enabled for Tesla with 4 doors.\n// prints: Tesla has 4 doors"
     },
     {
       "type": "callout",
@@ -5286,7 +5286,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-convenience",
       "language": "swift",
       "caption": "Designated and convenience initializer delegation chains",
-      "content": "class UserAccount {\n    let id: UUID\n    var username: String\n    var isPremium: Bool\n    \n    // Designated Initializer: Fully initializes all stored properties\n    init(id: UUID, username: String, isPremium: Bool) {\n        self.id = id\n        self.username = username\n        self.isPremium = isPremium\n    }\n    \n    // Convenience Initializer: Delegates across to the designated initializer\n    convenience init(username: String) {\n        self.init(id: UUID(), username: username, isPremium: false)\n    }\n    \n    // Convenience Initializer delegating to another convenience initializer\n    convenience init(guestName: String) {\n        self.init(username: \"Guest_\\(guestName)\")\n    }\n}"
+      "content": "class Rectangle {\n    var width: Double\n    var height: Double\n    \n    var area: Double { width * height }\n    \n    // Designated Initializer: Fully initializes all stored properties\n    init(width: Double, height: Double) {\n        self.width = width\n        self.height = height\n    }\n    \n    // Convenience Initializer: Delegates across (self.init) providing defaults\n    convenience init(sideLength: Double) {\n        self.init(width: sideLength, height: sideLength)\n    }\n}\n\nlet rect = Rectangle(width: 10, height: 20)\nprint(rect.area)\n// prints: 200.0\n\nlet square = Rectangle(sideLength: 5)\nprint(square.area)\n// prints: 25.0"
     },
     {
       "type": "table",
@@ -5370,7 +5370,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-failable",
       "language": "swift",
       "caption": "Failable initializer returning nil upon boundary violation",
-      "content": "struct NetworkPort {\n    let rawValue: Int\n    \n    init?(rawValue: Int) {\n        guard (1...65535).contains(rawValue) else {\n            return nil // Initialization aborted; returns nil\n        }\n        self.rawValue = rawValue\n    }\n}\n\nlet validPort = NetworkPort(rawValue: 8080)   // Optional(NetworkPort(rawValue: 8080))\nlet invalidPort = NetworkPort(rawValue: 99999) // nil"
+      "content": "struct NetworkPort {\n    let rawValue: Int\n    \n    init?(rawValue: Int) {\n        guard (1...65535).contains(rawValue) else {\n            return nil // Initialization aborted; returns nil\n        }\n        self.rawValue = rawValue\n    }\n}\n\nif let validPort = NetworkPort(rawValue: 8080) {\n    print(\"Valid port configured: \\(validPort.rawValue)\")\n}\n// prints: Valid port configured: 8080\n\nlet invalidPort = NetworkPort(rawValue: 99999)\nprint(invalidPort == nil)\n// prints: true"
     },
     {
       "type": "heading",
@@ -5388,7 +5388,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-deinit",
       "language": "swift",
       "caption": "Guaranteed resource release inside class deinitializer",
-      "content": "class FileLogger {\n    private var fileDescriptor: Int32?\n    \n    init(path: String) {\n        self.fileDescriptor = 3 // Simulated file descriptor\n        print(\"Opened file at \\(path)\")\n    }\n    \n    deinit {\n        // Guaranteed cleanup even if errors occurred during application flow\n        if let fd = fileDescriptor {\n            print(\"Closing file descriptor \\(fd)\")\n            fileDescriptor = nil\n        }\n    }\n}"
+      "content": "class FileLogger {\n    private var fileDescriptor: Int32?\n    let path: String\n    \n    init(path: String) {\n        self.path = path\n        self.fileDescriptor = 3 // Simulated file descriptor\n        print(\"Opened file at \\(path)\")\n    }\n    \n    deinit {\n        // Guaranteed cleanup when reference count reaches 0\n        if let fd = fileDescriptor {\n            print(\"Closing file descriptor \\(fd) for \\(path)\")\n            fileDescriptor = nil\n        }\n    }\n}\n\n// Scoping demonstration showing exact deinit execution\nprint(\"--- Entering scope ---\")\ndo {\n    let logger = FileLogger(path: \"/var/log/app.log\")\n    print(\"Logging to \\(logger.path)...\")\n    // Exiting do-block causes logger ARC retain count to hit zero\n}\nprint(\"--- Exited scope ---\")\n\n// prints: --- Entering scope ---\n// prints: Opened file at /var/log/app.log\n// prints: Logging to /var/log/app.log...\n// prints: Closing file descriptor 3 for /var/log/app.log\n// prints: --- Exited scope ---"
     },
     {
       "type": "heading",
