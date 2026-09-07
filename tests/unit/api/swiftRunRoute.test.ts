@@ -10,6 +10,8 @@ vi.mock('@/lib/swiftRunner', () => ({
 describe('Swift Playground API Route (/api/swift/run)', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
   });
 
   it('rejects requests with missing or non-json Content-Type', async () => {
