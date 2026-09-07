@@ -5485,7 +5485,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "quickAnswer",
       "id": "qa",
-      "content": "`some` represents an **opaque type** where the underlying concrete type is fixed and known to the compiler, but hidden from the caller. It enables static direct dispatch, aggressive compiler inlining, and zero boxing overhead. In contrast, `any` represents an **existential container** where the underlying concrete type is genuinely dynamic and unknown at compile time, incurring Protocol Witness Table indirection and dynamic heap allocation if the payload exceeds 24 bytes. Use `some` by default; use `any` strictly when you need heterogeneous collections."
+      "content": "`some` represents an **opaque type** where the concrete type is fixed and known to the compiler, enabling direct dispatch and zero boxing overhead. In contrast, `any` creates a dynamic **existential container** for unknown types at compile time, requiring Protocol Witness Table indirection and potential heap allocation, making it strictly for heterogeneous collections."
     },
     {
       "type": "heading",
@@ -5521,7 +5521,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-some",
       "language": "swift",
       "caption": "Opaque return types preserving concrete type identity",
-      "content": "protocol Shape {\n    func draw() -> String\n}\n\nstruct Circle: Shape {\n    func draw() -> String { \"○\" }\n}\n\nstruct Square: Shape {\n    func draw() -> String { \"□\" }\n}\n\n// Opaque Return: The compiler knows this returns Circle, but callers only see Shape\nfunc makeDefaultShape() -> some Shape {\n    return Circle() \n}\n\nlet shape1 = makeDefaultShape()\nlet shape2 = makeDefaultShape()\n// Compiler knows shape1 and shape2 have identical underlying concrete types!"
+      "content": "protocol Shape {\n    func draw() -> String\n}\n\nstruct Circle: Shape {\n    func draw() -> String { \"○\" }\n}\n\nstruct Square: Shape {\n    func draw() -> String { \"□\" }\n}\n\n// Opaque Return: The compiler knows this returns Circle, but callers only see Shape\nfunc makeDefaultShape() -> some Shape {\n    return Circle() \n}\n\nlet shape1 = makeDefaultShape()\nprint(shape1.draw())\n// prints: ○\n\nlet shape2 = makeDefaultShape()\n// Compiler knows shape1 and shape2 have identical underlying concrete types!"
     },
     {
       "type": "heading",
@@ -5539,7 +5539,14 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-any",
       "language": "swift",
       "caption": "Heterogeneous collections requiring existential any boxes",
-      "content": "// Heterogeneous Collection: CANNOT use 'some Shape' here!\n// Elements are different concrete types (Circle and Square)\nvar shapes: [any Shape] = [Circle(), Square(), Circle()]\n\nfor shape in shapes {\n    // Dynamic dispatch through Protocol Witness Table\n    print(shape.draw())\n}"
+      "content": "// Heterogeneous Collection: CANNOT use 'some Shape' here!\n// Elements are different concrete types (Circle and Square)\nvar shapes: [any Shape] = [Circle(), Square(), Circle()]\n\nfor shape in shapes {\n    // Dynamic dispatch through Protocol Witness Table\n    print(shape.draw())\n}\n// prints: ○\n// prints: □\n// prints: ○"
+    },
+    {
+      "type": "code",
+      "id": "code-comparison",
+      "language": "swift",
+      "caption": "Side-by-side comparison: some View vs [any View]",
+      "content": "import SwiftUI\n\n// 1. some View (Opaque Type)\n// Returns exactly ONE specific concrete view type\nvar body: some View {\n    VStack {\n        Text(\"Hello\")\n        Button(\"Click\") { }\n    }\n} // ✅ Fast, direct dispatch, zero boxing\n\n// 2. [any View] (Existential Type)\n// Collection holding DIFFERENT concrete view types\nlet mixedViews: [any View] = [\n    Text(\"Title\"),\n    Image(systemName: \"star\")\n] // ✅ Required for heterogeneous collections, incurs boxing overhead"
     },
     {
       "type": "table",
@@ -5959,7 +5966,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-html-builder",
       "language": "swift",
       "caption": "Custom HTMLBuilder implementing result builder static translation methods",
-      "content": "@resultBuilder\nstruct HTMLBuilder {\n    // Required: Combines multiple statements into one\n    static func buildBlock(_ components: String...) -> String {\n        components.joined(separator: \"\\n\")\n    }\n    \n    // Supports single 'if' statements without else\n    static func buildOptional(_ component: String?) -> String {\n        component ?? \"\"\n    }\n    \n    // Supports 'if' branch\n    static func buildEither(first component: String) -> String {\n        component\n    }\n    \n    // Supports 'else' branch\n    static func buildEither(second component: String) -> String {\n        component\n    }\n}\n\n// Applying the builder to a function closure parameter\nfunc htmlPage(@HTMLBuilder content: () -> String) -> String {\n    \"<!DOCTYPE html>\\n<html>\\n\" + content() + \"\\n</html>\"\n}\n\nlet isLoggedIn = true\nlet page = htmlPage {\n    \"<h1>Welcome to SwiftCraft</h1>\"\n    if isLoggedIn {\n        \"<p>Hello, authenticated user!</p>\"\n    } else {\n        \"<a href='/login'>Please log in</a>\"\n    }\n}\nprint(page)"
+      "content": "@resultBuilder\nstruct HTMLBuilder {\n    // Required: Combines multiple statements into one\n    static func buildBlock(_ components: String...) -> String {\n        components.joined(separator: \"\\n\")\n    }\n    \n    // Supports single 'if' statements without else\n    static func buildOptional(_ component: String?) -> String {\n        component ?? \"\"\n    }\n    \n    // Supports 'if' branch\n    static func buildEither(first component: String) -> String {\n        component\n    }\n    \n    // Supports 'else' branch\n    static func buildEither(second component: String) -> String {\n        component\n    }\n}\n\n// Applying the builder to a function closure parameter\nfunc htmlPage(@HTMLBuilder content: () -> String) -> String {\n    \"<!DOCTYPE html>\\n<html>\\n\" + content() + \"\\n</html>\"\n}\n\nlet isLoggedIn = true\nlet page = htmlPage {\n    \"<h1>Welcome to SwiftCraft</h1>\"\n    if isLoggedIn {\n        \"<p>Hello, authenticated user!</p>\"\n    } else {\n        \"<a href='/login'>Please log in</a>\"\n    }\n}\nprint(page)\n// prints: <!DOCTYPE html>\n// prints: <html>\n// prints: <h1>Welcome to SwiftCraft</h1>\n// prints: <p>Hello, authenticated user!</p>\n// prints: </html>"
     },
     {
       "type": "table",
@@ -6021,6 +6028,13 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "variant": "warning",
       "title": "Compiler Type-Check Timeouts in Complex DSLs",
       "content": "Deeply nested result builder closures with ambiguous inference can cause the Swift compiler to fail with: *\"The compiler is unable to type-check this expression in reasonable time\"*. Break complex result builder trees into smaller helper functions or computed subviews to keep compile times fast."
+    },
+    {
+      "type": "code",
+      "id": "code-array-builder",
+      "language": "swift",
+      "caption": "ArrayBuilder demonstrating buildArray for for-in loop support",
+      "content": "@resultBuilder\nstruct ArrayBuilder<Element> {\n    static func buildBlock(_ components: [Element]...) -> [Element] {\n        components.flatMap { $0 }\n    }\n    static func buildExpression(_ expression: Element) -> [Element] {\n        [expression]\n    }\n    static func buildArray(_ components: [[Element]]) -> [Element] {\n        components.flatMap { $0 }\n    }\n}\n\nfunc makeArray(@ArrayBuilder<Int> build: () -> [Int]) -> [Int] {\n    build()\n}\n\nlet generatedArray = makeArray {\n    1\n    2\n    for i in 3...5 {\n        i\n    }\n}\nprint(generatedArray)\n// prints: [1, 2, 3, 4, 5]"
     },
     {
       "type": "heading",
@@ -6224,6 +6238,24 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     },
     {
       "type": "heading",
+      "id": "h-freestanding",
+      "level": 2,
+      "content": "Freestanding Macros in Action"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-freestanding",
+      "content": "Freestanding macros are invoked with a `#` symbol and generate code that produces a value (like `#URL`) or standalone declarations. They provide compile-time validation of their arguments, completely eliminating runtime crashes for invalid data formats."
+    },
+    {
+      "type": "code",
+      "id": "code-freestanding-macro",
+      "language": "swift",
+      "caption": "A freestanding macro providing compile-time string validation",
+      "content": "import Foundation\n\n// 1. Without macro (Runtime Crash potential!)\nlet url = URL(string: \"https://apple.com\")!\n\n// 2. With #URL macro (Compile-Time validation!)\nlet safeUrl = #URL(\"https://apple.com\")\nprint(safeUrl.host!) \n// prints: apple.com\n\n// 🚨 If you type an invalid URL:\n// let badUrl = #URL(\"https:// apple.com\")\n// Xcode displays a COMPILE ERROR: \"Malformed url: https:// apple.com\"\n// The macro analyzes the string literal during compilation and blocks the build!"
+    },
+    {
+      "type": "heading",
       "id": "h-observable",
       "level": 2,
       "content": "Real-World Case Study: How @Observable Works"
@@ -6238,7 +6270,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-macro-observable",
       "language": "swift",
       "caption": "@Observable macro declaration and synthesized observation members",
-      "content": "@Observable\nclass UserProfile {\n    var name: String = \"Taylor\"\n    var score: Int = 100\n}\n\n// Xcode \"Expand Macro\" reveals the generated code:\n// class UserProfile: Observable {\n//     @ObservationIgnored private let _$observationRegistrar = ObservationRegistrar()\n//     internal nonisolated func access<Member>(keyPath: KeyPath<UserProfile, Member>) { ... }\n//     var name: String {\n//         get { _$observationRegistrar.access(self, keyPath: \\.name); return _name }\n//         set { _$observationRegistrar.withMutation(of: self, keyPath: \\.name) { _name = newValue } }\n//     }\n// }"
+      "content": "@Observable\nclass UserProfile {\n    var name: String = \"Taylor\"\n    var score: Int = 100\n}\n\n// Xcode \"Expand Macro\" reveals the generated code:\n// class UserProfile: Observable {\n//     @ObservationIgnored private let _$observationRegistrar = ObservationRegistrar()\n//     internal nonisolated func access<Member>(keyPath: KeyPath<UserProfile, Member>) { ... }\n//     var name: String {\n//         get { _$observationRegistrar.access(self, keyPath: \\.name); return _name }\n//         set { _$observationRegistrar.withMutation(of: self, keyPath: \\.name) { _name = newValue } }\n//     }\n// }\n\n// Usage:\nlet profile = UserProfile()\nprofile.name = \"Alison\" \n// The generated setter automatically tracks the mutation and notifies observers."
     },
     {
       "type": "heading",
@@ -6440,7 +6472,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-dispatch",
       "language": "swift",
       "caption": "V-Table vs Static dispatch across classes and extensions",
-      "content": "class Animal {\n    func speak() { print(\"Generic sound\") } // V-Table Dispatch\n    final func sleep() { print(\"Sleeping\") } // Static Dispatch (devirtualized)\n}\n\nextension Animal {\n    func eat() { print(\"Eating\") } // Static Dispatch (extensions cannot be overridden)\n}\n\nclass Dog: Animal {\n    override func speak() { print(\"Woof!\") } // Overrides slot in Dog's V-Table\n}"
+      "content": "class Animal {\n    func speak() { print(\"Generic sound\") } // V-Table Dispatch\n    final func sleep() { print(\"Sleeping\") } // Static Dispatch (devirtualized)\n}\n\nextension Animal {\n    func eat() { print(\"Eating\") } // Static Dispatch (extensions cannot be overridden)\n}\n\nclass Dog: Animal {\n    override func speak() { print(\"Woof!\") } // Overrides slot in Dog's V-Table\n}\n\nlet dog = Dog()\ndog.speak() // prints: Woof!\ndog.sleep() // prints: Sleeping\ndog.eat()   // prints: Eating"
     },
     {
       "type": "heading",
@@ -6452,6 +6484,31 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "type": "paragraph",
       "id": "p-dispatch-trap",
       "content": "A classic senior iOS interview trap:\n- If a method is declared in the protocol definition AND implemented in an extension: It is a requirement, stored in the PWT, and uses **Dynamic Dispatch**.\n- If a method is declared ONLY in the extension: It has no PWT slot and uses **Static Dispatch**. If a conforming type writes a custom implementation, it will be ignored when called on an existential `any Protocol`!"
+    },
+    {
+      "type": "code",
+      "id": "code-dispatch-trap",
+      "language": "swift",
+      "caption": "The Protocol Extension Dispatch Trap in action",
+      "content": "protocol Drawable {\n    func draw() // Declared in blueprint -> Dynamic Dispatch (PWT)\n}\n\nextension Drawable {\n    func draw() { print(\"Default Draw\") }\n    \n    // ONLY in extension -> Static Dispatch!\n    func fill() { print(\"Default Fill\") }\n}\n\nstruct Circle: Drawable {\n    func draw() { print(\"Circle Draw\") }\n    func fill() { print(\"Circle Fill\") } // Shadowing, not overriding!\n}\n\nlet myCircle = Circle()\nmyCircle.draw() // prints: Circle Draw\nmyCircle.fill() // prints: Circle Fill\n\n// 🚨 THE TRAP: View the circle through the protocol lens\nlet drawable: any Drawable = myCircle\ndrawable.draw() // prints: Circle Draw (Dynamic via PWT)\ndrawable.fill() // prints: Default Fill (Static direct call, Circle.fill ignored!)"
+    },
+    {
+      "type": "heading",
+      "id": "h-message-dispatch",
+      "level": 2,
+      "content": "Message Dispatch (@objc dynamic)"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-message-dispatch",
+      "content": "The most dynamic (and slowest) dispatch method relies on the Objective-C runtime (`objc_msgSend`). By marking a method with `@objc dynamic`, you force Swift to use message dispatch. This enables powerful runtime features like Key-Value Observing (KVO) and method swizzling, at the cost of losing all compiler optimizations."
+    },
+    {
+      "type": "code",
+      "id": "code-message-dispatch",
+      "language": "swift",
+      "caption": "Enabling KVO with @objc dynamic message dispatch",
+      "content": "import Foundation\n\nclass DownloadManager: NSObject {\n    // @objc dynamic forces Objective-C message dispatch\n    // This makes the property eligible for Key-Value Observing (KVO)\n    @objc dynamic var progress: Double = 0.0\n}\n\nlet manager = DownloadManager()\n\n// KVO relies entirely on message dispatch to intercept the setter\nlet observation = manager.observe(\\.progress, options: [.new]) { object, change in\n    print(\"Progress updated to: \\(change.newValue ?? 0.0)\")\n}\n\nmanager.progress = 0.5\n// prints: Progress updated to: 0.5"
     },
     {
       "type": "heading",
