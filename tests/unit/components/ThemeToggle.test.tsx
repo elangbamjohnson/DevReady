@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, cleanup } from '@testing-library/react';
 import { ThemeToggle } from '@/components/common/ThemeToggle';
 
 describe('ThemeToggle Component', () => {
@@ -9,12 +9,17 @@ describe('ThemeToggle Component', () => {
   });
 
   afterEach(() => {
+    cleanup(); // Unmount component first to detach MutationObserver
     document.documentElement.removeAttribute('data-theme');
     localStorage.clear();
   });
 
   it('renders with dark mode default aria-label and toggles to light mode on click', async () => {
-    render(<ThemeToggle />);
+    await act(async () => {
+      render(<ThemeToggle />);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    
     const button = screen.getByRole('button', { name: /switch to light mode/i });
     expect(button).toBeInTheDocument();
 
@@ -32,7 +37,11 @@ describe('ThemeToggle Component', () => {
     document.documentElement.setAttribute('data-theme', 'light');
     localStorage.setItem('theme', 'light');
 
-    render(<ThemeToggle />);
+    await act(async () => {
+      render(<ThemeToggle />);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+    
     const button = screen.getByRole('button', { name: /switch to dark mode/i });
     expect(button).toBeInTheDocument();
 

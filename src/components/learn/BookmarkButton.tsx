@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
-import { isBookmarked, toggleBookmark } from '@/lib/bookmarkStore';
+import { useIsBookmarked, toggleBookmark, useMounted } from '@/lib/bookmarkStore';
 import { cn } from '@/lib/utils';
 import type { ArticleTopic } from '@/types';
 
@@ -12,13 +11,12 @@ interface BookmarkButtonProps {
 }
 
 export function BookmarkButton({ topic, className }: BookmarkButtonProps) {
-  const [saved, setSaved] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return isBookmarked(topic.id);
-  });
+  const mounted = useMounted();
+  const isSaved = useIsBookmarked(topic.id);
+  const saved = mounted ? isSaved : false;
 
   const handleToggle = () => {
-    const nowSaved = toggleBookmark({
+    toggleBookmark({
       id: topic.id,
       title: topic.title,
       category: topic.category,
@@ -26,12 +24,12 @@ export function BookmarkButton({ topic, className }: BookmarkButtonProps) {
       description: topic.description,
       href: `/learn/${topic.category}/${topic.slug}`,
     });
-    setSaved(nowSaved);
   };
 
   return (
     <button
       type="button"
+      suppressHydrationWarning
       onClick={handleToggle}
       aria-label={saved ? 'Remove bookmark' : 'Bookmark this topic'}
       aria-pressed={saved}

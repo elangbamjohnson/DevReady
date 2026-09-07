@@ -3831,7 +3831,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
     {
       "type": "quickAnswer",
       "id": "qa",
-      "content": "Generics enable you to write flexible, reusable functions and types that work with any type satisfying specified requirements, while guaranteeing full compile-time type safety. Rather than discarding types via runtime boxing or type erasure, the Swift compiler optimizes generic code through **monomorphization (specialization)**, emitting zero-cost, direct-dispatch machine code for concrete types. You constrain generics using protocol conformance (`<T: Comparable>`), class bounds (`<T: UIViewController>`), and generic `where` clauses, while protocols express generic requirements via `associatedtype` and modern **Primary Associated Types** (`protocol Container<Element>`)."
+      "content": "Generics let you write type-safe code that works with multiple types. Type constraints restrict which types satisfy the generic — for example, a function might accept any type conforming to Equatable."
     },
     {
       "type": "heading",
@@ -3865,7 +3865,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
       "id": "code-generic-functions",
       "language": "swift",
       "caption": "Generic functions, inout swaps, and call-site type inference",
-      "content": "// Type parameter T acts as a placeholder for any concrete type\nfunc swapTwoValues<T>(_ a: inout T, _ b: inout T) {\n    let temporary = a\n    a = b\n    b = temporary\n}\n\nvar firstScore = 42\nvar secondScore = 99\nswapTwoValues(&firstScore, &secondScore) // Compiler infers T is Int\n\nvar playerOne = \"Alice\"\nvar playerTwo = \"Bob\"\nswapTwoValues(&playerOne, &playerTwo)   // Compiler infers T is String\n\n// ❌ Compile error: Arguments must be the same concrete type!\n// swapTwoValues(&firstScore, &playerOne)\n\n// Generic utility function with multiple type parameters\nfunc pair<First, Second>(_ a: First, _ b: Second) -> (First, Second) {\n    (a, b)\n}\nlet profile = pair(\"User_402\", 100) // (String, Int)"
+      "content": "// Type parameter T acts as a placeholder for any concrete type\nfunc swapTwoValues<T>(_ a: inout T, _ b: inout T) {\n    let temporary = a\n    a = b\n    b = temporary\n}\n\nvar firstScore = 42\nvar secondScore = 99\nswapTwoValues(&firstScore, &secondScore) // Compiler infers T is Int\nprint(\"Scores: \\(firstScore), \\(secondScore)\")\n// prints: Scores: 99, 42\n\nvar playerOne = \"Alice\"\nvar playerTwo = \"Bob\"\nswapTwoValues(&playerOne, &playerTwo)   // Compiler infers T is String\nprint(\"Players: \\(playerOne), \\(playerTwo)\")\n// prints: Players: Bob, Alice\n\n// ❌ Compile error: Arguments must be the same concrete type!\n// swapTwoValues(&firstScore, &playerOne)\n\n// Generic utility function with multiple type parameters\nfunc pair<First, Second>(_ a: First, _ b: Second) -> (First, Second) {\n    (a, b)\n}\nlet profile = pair(\"User_402\", 100)\nprint(profile)\n// prints: (\"User_402\", 100)"
     },
     {
       "type": "heading",
@@ -3893,7 +3893,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
       "id": "code-constraints",
       "language": "swift",
       "caption": "Type constraints using protocol conformance and class bounds",
-      "content": "// T must conform to Comparable to allow the '>' operator\nfunc findMax<T: Comparable>(in array: [T]) -> T? {\n    guard var currentMax = array.first else { return nil }\n    for item in array.dropFirst() {\n        if item > currentMax {\n            currentMax = item\n        }\n    }\n    return currentMax\n}\n\nprint(findMax(in: [5, 12, 3, 8]) ?? 0)         // 12 (Int: Comparable)\nprint(findMax(in: [\"zebra\", \"apple\"]) ?? \"\")   // \"zebra\" (String: Comparable)\n\n// Class constraint: T must be a UIViewController subclass conforming to Themeable\nprotocol Themeable {\n    func applyBrandTheme()\n}\n\nclass BaseViewController {}\nclass ProfileViewController: BaseViewController, Themeable {\n    func applyBrandTheme() { print(\"Applied theme\") }\n}\n\nfunc configureScreen<T: BaseViewController & Themeable>(_ controller: T) {\n    controller.applyBrandTheme()\n}"
+      "content": "// T must conform to Comparable to allow the '>' operator\nfunc findMax<T: Comparable>(in array: [T]) -> T? {\n    guard var currentMax = array.first else { return nil }\n    for item in array.dropFirst() {\n        if item > currentMax {\n            currentMax = item\n        }\n    }\n    return currentMax\n}\n\nlet result1 = findMax(in: [3, 1, 4])\nprint(result1 ?? 0)\n// prints: 4\n\nlet result2 = findMax(in: [\"apple\", \"zebra\", \"banana\"])\nprint(result2 ?? \"\")\n// prints: zebra\n\n// Class constraint: T must be a UIViewController subclass conforming to Themeable\nprotocol Themeable {\n    func applyBrandTheme()\n}\n\nclass BaseViewController {}\nclass ProfileViewController: BaseViewController, Themeable {\n    func applyBrandTheme() { print(\"Applied theme\") }\n}\n\nfunc configureScreen<T: BaseViewController & Themeable>(_ controller: T) {\n    controller.applyBrandTheme()\n}\n\nlet profileVC = ProfileViewController()\nconfigureScreen(profileVC)\n// prints: Applied theme"
     },
     {
       "type": "callout",
@@ -3918,7 +3918,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
       "id": "code-generic-type",
       "language": "swift",
       "caption": "Generic Stack with value semantics and Sequence conformance",
-      "content": "struct Stack<Element>: Sequence {\n    private var elements: [Element] = []\n    \n    var isEmpty: Bool { elements.isEmpty }\n    var count: Int { elements.count }\n    \n    // mutating required because structs are value types\n    mutating func push(_ element: Element) {\n        elements.append(element)\n    }\n    \n    mutating func pop() -> Element? {\n        elements.popLast()\n    }\n    \n    func peek() -> Element? {\n        elements.last\n    }\n    \n    // Sequence conformance allows for-in loops and map/filter/reduce\n    func makeIterator() -> IndexingIterator<[Element]> {\n        elements.makeIterator()\n    }\n}\n\nvar numbers = Stack<Int>()\nnumbers.push(10)\nnumbers.push(20)\nprint(numbers.pop() ?? 0) // 20\n\nvar breadcrumbs = Stack<String>()\nbreadcrumbs.push(\"Home\")\nbreadcrumbs.push(\"Settings\")\nbreadcrumbs.push(\"Privacy\")"
+      "content": "struct Stack<Element>: Sequence {\n    private var elements: [Element] = []\n    \n    var isEmpty: Bool { elements.isEmpty }\n    var count: Int { elements.count }\n    \n    // mutating required because structs are value types\n    mutating func push(_ element: Element) {\n        elements.append(element)\n    }\n    \n    mutating func pop() -> Element? {\n        elements.popLast()\n    }\n    \n    func peek() -> Element? {\n        elements.last\n    }\n    \n    // Sequence conformance allows for-in loops and map/filter/reduce\n    func makeIterator() -> IndexingIterator<[Element]> {\n        elements.makeIterator()\n    }\n}\n\nvar numbers = Stack<Int>()\nnumbers.push(10)\nnumbers.push(20)\nprint(numbers.pop() ?? 0)\n// prints: 20\n\nvar breadcrumbs = Stack<String>()\nbreadcrumbs.push(\"Home\")\nbreadcrumbs.push(\"Settings\")\nprint(breadcrumbs.peek() ?? \"\")\n// prints: Settings"
     },
     {
       "type": "heading",
@@ -3941,7 +3941,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
       "id": "code-associated-types",
       "language": "swift",
       "caption": "associatedtype and Primary Associated Types in protocols",
-      "content": "// Swift 5.7+ Primary Associated Type: <Item> in angle brackets!\nprotocol Container<Item> {\n    associatedtype Item\n    \n    var count: Int { get }\n    mutating func append(_ item: Item)\n    subscript(index: Int) -> Item { get }\n}\n\n// Conforming Stack automatically satisfies 'Item = Element'\nextension Stack: Container {\n    typealias Item = Element\n    \n    mutating func append(_ item: Element) {\n        push(item)\n    }\n    \n    subscript(index: Int) -> Element {\n        elements[index]\n    }\n}\n\n// Swift 5.7+ Primary Associated Type constraint in function signature:\nfunc printContainerItems(container: some Container<String>) {\n    print(\"Container with \\(container.count) strings:\")\n    for i in 0..<container.count {\n        print(\" - \\(container[i])\")\n    }\n}"
+      "content": "// Swift 5.7+ Primary Associated Type: <Item> in angle brackets!\nprotocol Container<Item> {\n    associatedtype Item\n    \n    var count: Int { get }\n    mutating func append(_ item: Item)\n    subscript(index: Int) -> Item { get }\n}\n\n// Conforming Stack automatically satisfies 'Item = Element'\nextension Stack: Container {\n    typealias Item = Element\n    \n    mutating func append(_ item: Element) {\n        push(item)\n    }\n    \n    subscript(index: Int) -> Element {\n        elements[index]\n    }\n}\n\n// Swift 5.7+ Primary Associated Type constraint in function signature:\nfunc printContainerItems(container: some Container<String>) {\n    print(\"Container with \\(container.count) strings:\")\n    for i in 0..<container.count {\n        print(\" - \\(container[i])\")\n    }\n}\n\nvar names = Stack<String>()\nnames.append(\"Alice\")\nnames.append(\"Bob\")\nprintContainerItems(container: names)\n// prints: Container with 2 strings:\n// prints:  - Alice\n// prints:  - Bob"
     },
     {
       "type": "callout",
@@ -3971,7 +3971,7 @@ print(tracker.score)  // ✅ Readable from outside (internal by default)
       "id": "code-where-clauses",
       "language": "swift",
       "caption": "Generic where clauses, conditional conformance, and contextual extensions",
-      "content": "// 1. Where clause matching associated types across two containers\nfunc allItemsMatch<C1: Container, C2: Container>(\n    _ left: C1, \n    _ right: C2\n) -> Bool where C1.Item == C2.Item, C1.Item: Equatable {\n    guard left.count == right.count else { return false }\n    for i in 0..<left.count {\n        if left[i] != right[i] { return false }\n    }\n    return true\n}\n\n// 2. Conditional Conformance: Stack is Equatable ONLY if Element is Equatable!\nextension Stack: Equatable where Element: Equatable {\n    static func == (lhs: Stack<Element>, rhs: Stack<Element>) -> Bool {\n        lhs.elements == rhs.elements\n    }\n}\n\nlet stackA = Stack<Int>()\nlet stackB = Stack<Int>()\nprint(stackA == stackB) // ✅ Valid: Int is Equatable\n\nstruct NonEquatableItem {}\nlet stackC = Stack<NonEquatableItem>()\nlet stackD = Stack<NonEquatableItem>()\n// stackC == stackD // ❌ Compile error: NonEquatableItem does not conform to Equatable\n\n// 3. Contextual Extension: sum() ONLY exists when Element is Numeric\nextension Stack where Element: Numeric {\n    func sum() -> Element {\n        elements.reduce(0, +)\n    }\n}"
+      "content": "// 1. Where clause matching associated types across two containers\nfunc allItemsMatch<C1: Container, C2: Container>(\n    _ left: C1, \n    _ right: C2\n) -> Bool where C1.Item == C2.Item, C1.Item: Equatable {\n    guard left.count == right.count else { return false }\n    for i in 0..<left.count {\n        if left[i] != right[i] { return false }\n    }\n    return true\n}\n\n// 2. Conditional Conformance: Stack is Equatable ONLY if Element is Equatable!\nextension Stack: Equatable where Element: Equatable {\n    static func == (lhs: Stack<Element>, rhs: Stack<Element>) -> Bool {\n        lhs.elements == rhs.elements\n    }\n}\n\nvar stackA = Stack<Int>()\nstackA.push(1)\nstackA.push(2)\n\nvar stackB = Stack<Int>()\nstackB.push(1)\nstackB.push(2)\n\nprint(stackA == stackB)\n// prints: true\n\nprint(allItemsMatch(stackA, stackB))\n// prints: true\n\n// 3. Contextual Extension: sum() ONLY exists when Element is Numeric\nextension Stack where Element: Numeric {\n    func sum() -> Element {\n        elements.reduce(0, +)\n    }\n}\n\nprint(stackA.sum())\n// prints: 3\n\n// 4. Protocol conformance utility with Codable\nfunc printAsJSON<T: Encodable>(_ value: T) {\n    let encoder = JSONEncoder()\n    if let data = try? encoder.encode(value),\n       let json = String(data: data, encoding: .utf8) {\n        print(json)\n    }\n}\n\nstruct Person: Codable {\n    let name: String\n    let age: Int\n}\n\nlet person = Person(name: \"Alice\", age: 30)\nprintAsJSON(person)\n// prints: {\"name\":\"Alice\",\"age\":30}"
     },
     {
       "type": "heading",
@@ -5213,7 +5213,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "quickAnswer",
       "id": "qa",
-      "content": "Every stored property must be initialized before use — Swift guarantees this at compile time via **Two-Phase Initialization**. Designated initializers are the primary funnels through which class instances are created, delegating up to the superclass. Convenience initializers delegate across (`self.init`) to secondary configurations. Failable initializers (`init?`) return optional instances when prerequisites fail. Deinitializers (`deinit`) execute automatically when a class instance retain count drops to zero, guaranteeing deterministic cleanup of native resources."
+      "content": "Swift guarantees all properties are initialized before use via two-phase initialization. Designated initializers do the work; convenience initializers delegate to them. Failable initializers return optionals. Deinitializers run exactly once at deallocation, guaranteeing cleanup."
     },
     {
       "type": "heading",
@@ -5251,7 +5251,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-two-phase",
       "language": "swift",
       "caption": "Two-phase initialization in subclass and superclass hierarchies",
-      "content": "class Vehicle {\n    var brand: String\n    \n    init(brand: String) {\n        self.brand = brand\n        // Root class completes Phase 1\n    }\n}\n\nclass Car: Vehicle {\n    var numberOfDoors: Int\n    \n    init(brand: String, numberOfDoors: Int) {\n        // 1. Phase 1: Initialize subclass stored properties FIRST\n        self.numberOfDoors = numberOfDoors\n        \n        // 2. Phase 1: Delegate UP to superclass designated initializer\n        super.init(brand: brand)\n        \n        // 3. Phase 2: Now self is fully initialized! Safe to call instance methods\n        self.configureAlarmSystem()\n    }\n    \n    func configureAlarmSystem() {\n        print(\"Alarm enabled for \\(brand) with \\(numberOfDoors) doors.\")\n    }\n}"
+      "content": "class Vehicle {\n    var brand: String\n    \n    init(brand: String) {\n        self.brand = brand\n        // Root class completes Phase 1\n    }\n}\n\nclass Car: Vehicle {\n    var numberOfDoors: Int\n    \n    init(brand: String, numberOfDoors: Int) {\n        // 1. Phase 1: Initialize subclass stored properties FIRST\n        self.numberOfDoors = numberOfDoors\n        \n        // 2. Phase 1: Delegate UP to superclass designated initializer\n        super.init(brand: brand)\n        \n        // 3. Phase 2: Now self is fully initialized! Safe to call instance methods\n        self.configureAlarmSystem()\n    }\n    \n    func configureAlarmSystem() {\n        print(\"Alarm enabled for \\(brand) with \\(numberOfDoors) doors.\")\n    }\n}\n\nlet car = Car(brand: \"Tesla\", numberOfDoors: 4)\nprint(\"\\(car.brand) has \\(car.numberOfDoors) doors\")\n// prints: Alarm enabled for Tesla with 4 doors.\n// prints: Tesla has 4 doors"
     },
     {
       "type": "callout",
@@ -5286,7 +5286,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-convenience",
       "language": "swift",
       "caption": "Designated and convenience initializer delegation chains",
-      "content": "class UserAccount {\n    let id: UUID\n    var username: String\n    var isPremium: Bool\n    \n    // Designated Initializer: Fully initializes all stored properties\n    init(id: UUID, username: String, isPremium: Bool) {\n        self.id = id\n        self.username = username\n        self.isPremium = isPremium\n    }\n    \n    // Convenience Initializer: Delegates across to the designated initializer\n    convenience init(username: String) {\n        self.init(id: UUID(), username: username, isPremium: false)\n    }\n    \n    // Convenience Initializer delegating to another convenience initializer\n    convenience init(guestName: String) {\n        self.init(username: \"Guest_\\(guestName)\")\n    }\n}"
+      "content": "class Rectangle {\n    var width: Double\n    var height: Double\n    \n    var area: Double { width * height }\n    \n    // Designated Initializer: Fully initializes all stored properties\n    init(width: Double, height: Double) {\n        self.width = width\n        self.height = height\n    }\n    \n    // Convenience Initializer: Delegates across (self.init) providing defaults\n    convenience init(sideLength: Double) {\n        self.init(width: sideLength, height: sideLength)\n    }\n}\n\nlet rect = Rectangle(width: 10, height: 20)\nprint(rect.area)\n// prints: 200.0\n\nlet square = Rectangle(sideLength: 5)\nprint(square.area)\n// prints: 25.0"
     },
     {
       "type": "table",
@@ -5370,7 +5370,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-failable",
       "language": "swift",
       "caption": "Failable initializer returning nil upon boundary violation",
-      "content": "struct NetworkPort {\n    let rawValue: Int\n    \n    init?(rawValue: Int) {\n        guard (1...65535).contains(rawValue) else {\n            return nil // Initialization aborted; returns nil\n        }\n        self.rawValue = rawValue\n    }\n}\n\nlet validPort = NetworkPort(rawValue: 8080)   // Optional(NetworkPort(rawValue: 8080))\nlet invalidPort = NetworkPort(rawValue: 99999) // nil"
+      "content": "struct NetworkPort {\n    let rawValue: Int\n    \n    init?(rawValue: Int) {\n        guard (1...65535).contains(rawValue) else {\n            return nil // Initialization aborted; returns nil\n        }\n        self.rawValue = rawValue\n    }\n}\n\nif let validPort = NetworkPort(rawValue: 8080) {\n    print(\"Valid port configured: \\(validPort.rawValue)\")\n}\n// prints: Valid port configured: 8080\n\nlet invalidPort = NetworkPort(rawValue: 99999)\nprint(invalidPort == nil)\n// prints: true"
     },
     {
       "type": "heading",
@@ -5388,7 +5388,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-deinit",
       "language": "swift",
       "caption": "Guaranteed resource release inside class deinitializer",
-      "content": "class FileLogger {\n    private var fileDescriptor: Int32?\n    \n    init(path: String) {\n        self.fileDescriptor = 3 // Simulated file descriptor\n        print(\"Opened file at \\(path)\")\n    }\n    \n    deinit {\n        // Guaranteed cleanup even if errors occurred during application flow\n        if let fd = fileDescriptor {\n            print(\"Closing file descriptor \\(fd)\")\n            fileDescriptor = nil\n        }\n    }\n}"
+      "content": "class FileLogger {\n    private var fileDescriptor: Int32?\n    let path: String\n    \n    init(path: String) {\n        self.path = path\n        self.fileDescriptor = 3 // Simulated file descriptor\n        print(\"Opened file at \\(path)\")\n    }\n    \n    deinit {\n        // Guaranteed cleanup when reference count reaches 0\n        if let fd = fileDescriptor {\n            print(\"Closing file descriptor \\(fd) for \\(path)\")\n            fileDescriptor = nil\n        }\n    }\n}\n\n// Scoping demonstration showing exact deinit execution\nprint(\"--- Entering scope ---\")\ndo {\n    let logger = FileLogger(path: \"/var/log/app.log\")\n    print(\"Logging to \\(logger.path)...\")\n    // Exiting do-block causes logger ARC retain count to hit zero\n}\nprint(\"--- Exited scope ---\")\n\n// prints: --- Entering scope ---\n// prints: Opened file at /var/log/app.log\n// prints: Logging to /var/log/app.log...\n// prints: Closing file descriptor 3 for /var/log/app.log\n// prints: --- Exited scope ---"
     },
     {
       "type": "heading",
@@ -5485,7 +5485,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "quickAnswer",
       "id": "qa",
-      "content": "`some` represents an **opaque type** where the underlying concrete type is fixed and known to the compiler, but hidden from the caller. It enables static direct dispatch, aggressive compiler inlining, and zero boxing overhead. In contrast, `any` represents an **existential container** where the underlying concrete type is genuinely dynamic and unknown at compile time, incurring Protocol Witness Table indirection and dynamic heap allocation if the payload exceeds 24 bytes. Use `some` by default; use `any` strictly when you need heterogeneous collections."
+      "content": "`some` represents an **opaque type** where the concrete type is fixed and known to the compiler, enabling direct dispatch and zero boxing overhead. In contrast, `any` creates a dynamic **existential container** for unknown types at compile time, requiring Protocol Witness Table indirection and potential heap allocation, making it strictly for heterogeneous collections."
     },
     {
       "type": "heading",
@@ -5521,7 +5521,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-some",
       "language": "swift",
       "caption": "Opaque return types preserving concrete type identity",
-      "content": "protocol Shape {\n    func draw() -> String\n}\n\nstruct Circle: Shape {\n    func draw() -> String { \"○\" }\n}\n\nstruct Square: Shape {\n    func draw() -> String { \"□\" }\n}\n\n// Opaque Return: The compiler knows this returns Circle, but callers only see Shape\nfunc makeDefaultShape() -> some Shape {\n    return Circle() \n}\n\nlet shape1 = makeDefaultShape()\nlet shape2 = makeDefaultShape()\n// Compiler knows shape1 and shape2 have identical underlying concrete types!"
+      "content": "protocol Shape {\n    func draw() -> String\n}\n\nstruct Circle: Shape {\n    func draw() -> String { \"○\" }\n}\n\nstruct Square: Shape {\n    func draw() -> String { \"□\" }\n}\n\n// Opaque Return: The compiler knows this returns Circle, but callers only see Shape\nfunc makeDefaultShape() -> some Shape {\n    return Circle() \n}\n\nlet shape1 = makeDefaultShape()\nprint(shape1.draw())\n// prints: ○\n\nlet shape2 = makeDefaultShape()\n// Compiler knows shape1 and shape2 have identical underlying concrete types!"
     },
     {
       "type": "heading",
@@ -5539,7 +5539,14 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-any",
       "language": "swift",
       "caption": "Heterogeneous collections requiring existential any boxes",
-      "content": "// Heterogeneous Collection: CANNOT use 'some Shape' here!\n// Elements are different concrete types (Circle and Square)\nvar shapes: [any Shape] = [Circle(), Square(), Circle()]\n\nfor shape in shapes {\n    // Dynamic dispatch through Protocol Witness Table\n    print(shape.draw())\n}"
+      "content": "// Heterogeneous Collection: CANNOT use 'some Shape' here!\n// Elements are different concrete types (Circle and Square)\nvar shapes: [any Shape] = [Circle(), Square(), Circle()]\n\nfor shape in shapes {\n    // Dynamic dispatch through Protocol Witness Table\n    print(shape.draw())\n}\n// prints: ○\n// prints: □\n// prints: ○"
+    },
+    {
+      "type": "code",
+      "id": "code-comparison",
+      "language": "swift",
+      "caption": "Side-by-side comparison: some View vs [any View]",
+      "content": "import SwiftUI\n\n// 1. some View (Opaque Type)\n// Returns exactly ONE specific concrete view type\nvar body: some View {\n    VStack {\n        Text(\"Hello\")\n        Button(\"Click\") { }\n    }\n} // ✅ Fast, direct dispatch, zero boxing\n\n// 2. [any View] (Existential Type)\n// Collection holding DIFFERENT concrete view types\nlet mixedViews: [any View] = [\n    Text(\"Title\"),\n    Image(systemName: \"star\")\n] // ✅ Required for heterogeneous collections, incurs boxing overhead"
     },
     {
       "type": "table",
@@ -5698,6 +5705,11 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "title": "Combine: AnyPublisher Documentation",
       "url": "https://developer.apple.com/documentation/combine/anypublisher",
       "source": "apple-developer"
+    },
+    {
+      "title": "Combine: AnyCancellable Documentation",
+      "url": "https://developer.apple.com/documentation/combine/anycancellable",
+      "source": "apple-developer"
     }
   ],
   "content": [
@@ -5726,14 +5738,39 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "paragraph",
       "id": "p-building",
-      "content": "There are two common ways to build a type eraser: closure-based forwarding and class-based box hierarchies. Here is the closure-based approach for an `AnySpeaker` wrapper:"
+      "content": "There are two common ways to build a custom type eraser: closure-based forwarding and class-based box hierarchies. Here is the closure-based approach for an `AnySpeaker` wrapper:"
     },
     {
       "type": "code",
       "id": "code-eraser",
       "language": "swift",
       "caption": "Closure-based custom type eraser wrapper struct",
-      "content": "protocol Speaker {\n    associatedtype Message\n    func speak() -> Message\n}\n\n// 1. Generic wrapper over only the associated type, NOT the concrete type T\nstruct AnySpeaker<Message>: Speaker {\n    // 2. Closure capturing the protocol method\n    private let _speak: () -> Message\n    \n    // 3. Generic initializer accepts any conforming type and erases T\n    init<T: Speaker>(_ speaker: T) where T.Message == Message {\n        self._speak = speaker.speak\n    }\n    \n    // 4. Forward protocol calls directly to stored closure\n    func speak() -> Message {\n        return _speak()\n    }\n}\n\nstruct Human: Speaker {\n    func speak() -> String { \"Hello world!\" }\n}\n\nstruct Robot: Speaker {\n    func speak() -> String { \"Beep boop!\" }\n}\n\n// Heterogeneous collection of speakers sharing the same Message type\nlet speakers: [AnySpeaker<String>] = [AnySpeaker(Human()), AnySpeaker(Robot())]"
+      "content": "protocol Speaker {\n    associatedtype Message\n    func speak() -> Message\n}\n\n// 1. Generic wrapper over only the associated type, NOT the concrete type T\nstruct AnySpeaker<Message>: Speaker {\n    // 2. Closure capturing the protocol method\n    private let _speak: () -> Message\n    \n    // 3. Generic initializer accepts any conforming type and erases T\n    init<T: Speaker>(_ speaker: T) where T.Message == Message {\n        self._speak = speaker.speak\n    }\n    \n    // 4. Forward protocol calls directly to stored closure\n    func speak() -> Message {\n        return _speak()\n    }\n}\n\nstruct Human: Speaker {\n    func speak() -> String { \"Hello world!\" }\n}\n\nstruct Robot: Speaker {\n    func speak() -> String { \"Beep boop!\" }\n}\n\n// Heterogeneous collection of speakers sharing the same Message type\nlet speakers: [AnySpeaker<String>] = [AnySpeaker(Human()), AnySpeaker(Robot())]\n\nfor speaker in speakers {\n    print(speaker.speak())\n}\n// prints: Hello world!\n// prints: Beep boop!"
+    },
+    {
+      "type": "heading",
+      "id": "h-class-box",
+      "level": 2,
+      "content": "Class-Box Hierarchy Pattern"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-class-box",
+      "content": "Before Swift 5.7, the standard library implemented type erasers like `AnyIterator` and `AnySequence` using a class-box hierarchy. An abstract private base class defines the protocol interface, while a generic private subclass wraps the concrete type. A public value struct holds a reference to the base class, forwarding calls and preserving value semantics:"
+    },
+    {
+      "type": "code",
+      "id": "code-box-eraser",
+      "language": "swift",
+      "caption": "Class-box hierarchy type erasure pattern (as used in AnySequence and AnyIterator)",
+      "content": "protocol Repository {\n    associatedtype Item\n    func fetchAll() -> [Item]\n}\n\n// 1. Abstract base class (defines interface, erases the concrete type)\nprivate class _AnyRepositoryBase<Item>: Repository {\n    func fetchAll() -> [Item] {\n        fatalError(\"Must be overridden by subclass\")\n    }\n}\n\n// 2. Concrete subclass holding the specific conforming instance\nprivate final class _AnyRepositoryBox<Concrete: Repository>: _AnyRepositoryBase<Concrete.Item> {\n    private let _concrete: Concrete\n    \n    init(_ concrete: Concrete) {\n        self._concrete = concrete\n    }\n    \n    override func fetchAll() -> [Concrete.Item] {\n        return _concrete.fetchAll()\n    }\n}\n\n// 3. Public value wrapper maintaining value semantics and clean API\npublic struct AnyRepository<Item>: Repository {\n    private let _box: _AnyRepositoryBase<Item>\n    \n    public init<R: Repository>(_ repository: R) where R.Item == Item {\n        self._box = _AnyRepositoryBox(repository)\n    }\n    \n    public func fetchAll() -> [Item] {\n        return _box.fetchAll()\n    }\n}\n\n// Conforming concrete types\nstruct DatabaseRepo: Repository {\n    func fetchAll() -> [String] { [\"User_1\", \"User_2\"] }\n}\n\nstruct MockRepo: Repository {\n    func fetchAll() -> [String] { [\"Mock_Admin\"] }\n}\n\n// Heterogeneous collection using class-box type erasure\nlet repositories: [AnyRepository<String>] = [\n    AnyRepository(DatabaseRepo()),\n    AnyRepository(MockRepo())\n]\n\nfor repo in repositories {\n    print(repo.fetchAll())\n}\n// prints: [\"User_1\", \"User_2\"]\n// prints: [\"Mock_Admin\"]"
+    },
+    {
+      "type": "callout",
+      "id": "c-erasure-strategies",
+      "variant": "tip",
+      "title": "Choosing Between Type Erasure Strategies",
+      "content": "• **Closure-based erasure:** Flexible and lightweight for protocols with 1–2 methods, but incurs a closure allocation per method and requires care to avoid retain cycles.\n• **Class-box erasure:** Classic Apple stdlib pattern (used in AnySequence and AnyIterator). Better for protocols with many requirements and enables virtual dispatch with a single heap allocation.\n• **any existential (Swift 5.7+):** Preferred in modern Swift codebases (e.g. `any Sequence<Item>`). Zero boilerplate, compiler-managed existential containers, and built-in existential opening."
     },
     {
       "type": "table",
@@ -5799,6 +5836,18 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
         "**AnyPublisher (Combine):** Erases sprawling reactive pipeline types (`Publishers.Map<Publishers.Filter<...>>`) into clean public API contracts (`eraseToAnyPublisher()`).",
         "**AnyCancellable (Combine):** An autoreleasing subscription token that cancels on `deinit` and can be stored in a `Set<AnyCancellable>`."
       ]
+    },
+    {
+      "type": "paragraph",
+      "id": "p-combine-eraser",
+      "content": "Combine's `AnyPublisher` and `AnyCancellable` represent the most prominent real-world applications of type erasure in modern Apple frameworks. Calling `eraseToAnyPublisher()` abstracts deeply nested generic publisher operator chains into clean API contracts:"
+    },
+    {
+      "type": "code",
+      "id": "code-combine-eraser",
+      "language": "swift",
+      "caption": "Combine's AnyPublisher & AnyCancellable: Erasing nested publisher operator chains",
+      "content": "import Combine\n\n// Service protocol returning erased Publisher\nprotocol DataService {\n    func fetchCount() -> AnyPublisher<Int, Never>\n}\n\nfinal class CounterService: DataService {\n    // Pipeline creates complex type: Publishers.Map<Just<Int>, Int>\n    // eraseToAnyPublisher() hides internal pipeline operators from callers\n    func fetchCount() -> AnyPublisher<Int, Never> {\n        Just(42)\n            .map { $0 * 2 }\n            .eraseToAnyPublisher()\n    }\n}\n\nvar cancellables = Set<AnyCancellable>()\nlet service: DataService = CounterService()\n\n// AnyCancellable erases subscription tokens and cancels on deinit\nservice.fetchCount()\n    .sink { value in\n        print(\"Received: \\(value)\")\n    }\n    .store(in: &cancellables)\n\n// prints: Received: 84\n\n// Contrast with Swift 5.7+:\n// With primary associated types, you can also write:\n// func fetchCount() -> any Publisher<Int, Never>\n// but AnyPublisher remains standard in Combine for ABI stability."
     },
     {
       "type": "heading",
@@ -5917,7 +5966,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-html-builder",
       "language": "swift",
       "caption": "Custom HTMLBuilder implementing result builder static translation methods",
-      "content": "@resultBuilder\nstruct HTMLBuilder {\n    // Required: Combines multiple statements into one\n    static func buildBlock(_ components: String...) -> String {\n        components.joined(separator: \"\\n\")\n    }\n    \n    // Supports single 'if' statements without else\n    static func buildOptional(_ component: String?) -> String {\n        component ?? \"\"\n    }\n    \n    // Supports 'if' branch\n    static func buildEither(first component: String) -> String {\n        component\n    }\n    \n    // Supports 'else' branch\n    static func buildEither(second component: String) -> String {\n        component\n    }\n}\n\n// Applying the builder to a function closure parameter\nfunc htmlPage(@HTMLBuilder content: () -> String) -> String {\n    \"<!DOCTYPE html>\\n<html>\\n\" + content() + \"\\n</html>\"\n}\n\nlet isLoggedIn = true\nlet page = htmlPage {\n    \"<h1>Welcome to SwiftCraft</h1>\"\n    if isLoggedIn {\n        \"<p>Hello, authenticated user!</p>\"\n    } else {\n        \"<a href='/login'>Please log in</a>\"\n    }\n}\nprint(page)"
+      "content": "@resultBuilder\nstruct HTMLBuilder {\n    // Required: Combines multiple statements into one\n    static func buildBlock(_ components: String...) -> String {\n        components.joined(separator: \"\\n\")\n    }\n    \n    // Supports single 'if' statements without else\n    static func buildOptional(_ component: String?) -> String {\n        component ?? \"\"\n    }\n    \n    // Supports 'if' branch\n    static func buildEither(first component: String) -> String {\n        component\n    }\n    \n    // Supports 'else' branch\n    static func buildEither(second component: String) -> String {\n        component\n    }\n}\n\n// Applying the builder to a function closure parameter\nfunc htmlPage(@HTMLBuilder content: () -> String) -> String {\n    \"<!DOCTYPE html>\\n<html>\\n\" + content() + \"\\n</html>\"\n}\n\nlet isLoggedIn = true\nlet page = htmlPage {\n    \"<h1>Welcome to SwiftCraft</h1>\"\n    if isLoggedIn {\n        \"<p>Hello, authenticated user!</p>\"\n    } else {\n        \"<a href='/login'>Please log in</a>\"\n    }\n}\nprint(page)\n// prints: <!DOCTYPE html>\n// prints: <html>\n// prints: <h1>Welcome to SwiftCraft</h1>\n// prints: <p>Hello, authenticated user!</p>\n// prints: </html>"
     },
     {
       "type": "table",
@@ -5979,6 +6028,13 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "variant": "warning",
       "title": "Compiler Type-Check Timeouts in Complex DSLs",
       "content": "Deeply nested result builder closures with ambiguous inference can cause the Swift compiler to fail with: *\"The compiler is unable to type-check this expression in reasonable time\"*. Break complex result builder trees into smaller helper functions or computed subviews to keep compile times fast."
+    },
+    {
+      "type": "code",
+      "id": "code-array-builder",
+      "language": "swift",
+      "caption": "ArrayBuilder demonstrating buildArray for for-in loop support",
+      "content": "@resultBuilder\nstruct ArrayBuilder<Element> {\n    static func buildBlock(_ components: [Element]...) -> [Element] {\n        components.flatMap { $0 }\n    }\n    static func buildExpression(_ expression: Element) -> [Element] {\n        [expression]\n    }\n    static func buildArray(_ components: [[Element]]) -> [Element] {\n        components.flatMap { $0 }\n    }\n}\n\nfunc makeArray(@ArrayBuilder<Int> build: () -> [Int]) -> [Int] {\n    build()\n}\n\nlet generatedArray = makeArray {\n    1\n    2\n    for i in 3...5 {\n        i\n    }\n}\nprint(generatedArray)\n// prints: [1, 2, 3, 4, 5]"
     },
     {
       "type": "heading",
@@ -6182,6 +6238,24 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     },
     {
       "type": "heading",
+      "id": "h-freestanding",
+      "level": 2,
+      "content": "Freestanding Macros in Action"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-freestanding",
+      "content": "Freestanding macros are invoked with a `#` symbol and generate code that produces a value (like `#URL`) or standalone declarations. They provide compile-time validation of their arguments, completely eliminating runtime crashes for invalid data formats."
+    },
+    {
+      "type": "code",
+      "id": "code-freestanding-macro",
+      "language": "swift",
+      "caption": "A freestanding macro providing compile-time string validation",
+      "content": "import Foundation\n\n// 1. Without macro (Runtime Crash potential!)\nlet url = URL(string: \"https://apple.com\")!\n\n// 2. With #URL macro (Compile-Time validation!)\nlet safeUrl = #URL(\"https://apple.com\")\nprint(safeUrl.host!) \n// prints: apple.com\n\n// 🚨 If you type an invalid URL:\n// let badUrl = #URL(\"https:// apple.com\")\n// Xcode displays a COMPILE ERROR: \"Malformed url: https:// apple.com\"\n// The macro analyzes the string literal during compilation and blocks the build!"
+    },
+    {
+      "type": "heading",
       "id": "h-observable",
       "level": 2,
       "content": "Real-World Case Study: How @Observable Works"
@@ -6196,7 +6270,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-macro-observable",
       "language": "swift",
       "caption": "@Observable macro declaration and synthesized observation members",
-      "content": "@Observable\nclass UserProfile {\n    var name: String = \"Taylor\"\n    var score: Int = 100\n}\n\n// Xcode \"Expand Macro\" reveals the generated code:\n// class UserProfile: Observable {\n//     @ObservationIgnored private let _$observationRegistrar = ObservationRegistrar()\n//     internal nonisolated func access<Member>(keyPath: KeyPath<UserProfile, Member>) { ... }\n//     var name: String {\n//         get { _$observationRegistrar.access(self, keyPath: \\.name); return _name }\n//         set { _$observationRegistrar.withMutation(of: self, keyPath: \\.name) { _name = newValue } }\n//     }\n// }"
+      "content": "@Observable\nclass UserProfile {\n    var name: String = \"Taylor\"\n    var score: Int = 100\n}\n\n// Xcode \"Expand Macro\" reveals the generated code:\n// class UserProfile: Observable {\n//     @ObservationIgnored private let _$observationRegistrar = ObservationRegistrar()\n//     internal nonisolated func access<Member>(keyPath: KeyPath<UserProfile, Member>) { ... }\n//     var name: String {\n//         get { _$observationRegistrar.access(self, keyPath: \\.name); return _name }\n//         set { _$observationRegistrar.withMutation(of: self, keyPath: \\.name) { _name = newValue } }\n//     }\n// }\n\n// Usage:\nlet profile = UserProfile()\nprofile.name = \"Alison\" \n// The generated setter automatically tracks the mutation and notifies observers."
     },
     {
       "type": "heading",
@@ -6398,7 +6472,7 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "id": "code-dispatch",
       "language": "swift",
       "caption": "V-Table vs Static dispatch across classes and extensions",
-      "content": "class Animal {\n    func speak() { print(\"Generic sound\") } // V-Table Dispatch\n    final func sleep() { print(\"Sleeping\") } // Static Dispatch (devirtualized)\n}\n\nextension Animal {\n    func eat() { print(\"Eating\") } // Static Dispatch (extensions cannot be overridden)\n}\n\nclass Dog: Animal {\n    override func speak() { print(\"Woof!\") } // Overrides slot in Dog's V-Table\n}"
+      "content": "class Animal {\n    func speak() { print(\"Generic sound\") } // V-Table Dispatch\n    final func sleep() { print(\"Sleeping\") } // Static Dispatch (devirtualized)\n}\n\nextension Animal {\n    func eat() { print(\"Eating\") } // Static Dispatch (extensions cannot be overridden)\n}\n\nclass Dog: Animal {\n    override func speak() { print(\"Woof!\") } // Overrides slot in Dog's V-Table\n}\n\nlet dog = Dog()\ndog.speak() // prints: Woof!\ndog.sleep() // prints: Sleeping\ndog.eat()   // prints: Eating"
     },
     {
       "type": "heading",
@@ -6410,6 +6484,31 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "type": "paragraph",
       "id": "p-dispatch-trap",
       "content": "A classic senior iOS interview trap:\n- If a method is declared in the protocol definition AND implemented in an extension: It is a requirement, stored in the PWT, and uses **Dynamic Dispatch**.\n- If a method is declared ONLY in the extension: It has no PWT slot and uses **Static Dispatch**. If a conforming type writes a custom implementation, it will be ignored when called on an existential `any Protocol`!"
+    },
+    {
+      "type": "code",
+      "id": "code-dispatch-trap",
+      "language": "swift",
+      "caption": "The Protocol Extension Dispatch Trap in action",
+      "content": "protocol Drawable {\n    func draw() // Declared in blueprint -> Dynamic Dispatch (PWT)\n}\n\nextension Drawable {\n    func draw() { print(\"Default Draw\") }\n    \n    // ONLY in extension -> Static Dispatch!\n    func fill() { print(\"Default Fill\") }\n}\n\nstruct Circle: Drawable {\n    func draw() { print(\"Circle Draw\") }\n    func fill() { print(\"Circle Fill\") } // Shadowing, not overriding!\n}\n\nlet myCircle = Circle()\nmyCircle.draw() // prints: Circle Draw\nmyCircle.fill() // prints: Circle Fill\n\n// 🚨 THE TRAP: View the circle through the protocol lens\nlet drawable: any Drawable = myCircle\ndrawable.draw() // prints: Circle Draw (Dynamic via PWT)\ndrawable.fill() // prints: Default Fill (Static direct call, Circle.fill ignored!)"
+    },
+    {
+      "type": "heading",
+      "id": "h-message-dispatch",
+      "level": 2,
+      "content": "Message Dispatch (@objc dynamic)"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-message-dispatch",
+      "content": "The most dynamic (and slowest) dispatch method relies on the Objective-C runtime (`objc_msgSend`). By marking a method with `@objc dynamic`, you force Swift to use message dispatch. This enables powerful runtime features like Key-Value Observing (KVO) and method swizzling, at the cost of losing all compiler optimizations."
+    },
+    {
+      "type": "code",
+      "id": "code-message-dispatch",
+      "language": "swift",
+      "caption": "Enabling KVO with @objc dynamic message dispatch",
+      "content": "import Foundation\n\nclass DownloadManager: NSObject {\n    // @objc dynamic forces Objective-C message dispatch\n    // This makes the property eligible for Key-Value Observing (KVO)\n    @objc dynamic var progress: Double = 0.0\n}\n\nlet manager = DownloadManager()\n\n// KVO relies entirely on message dispatch to intercept the setter\nlet observation = manager.observe(\\.progress, options: [.new]) { object, change in\n    print(\"Progress updated to: \\(change.newValue ?? 0.0)\")\n}\n\nmanager.progress = 0.5\n// prints: Progress updated to: 0.5"
     },
     {
       "type": "heading",
