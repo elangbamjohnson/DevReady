@@ -8,8 +8,7 @@ import { Card } from '@/components/common/Card';
 import { Tabs } from '@/components/common/Tabs';
 import { CategoryBadge } from '@/components/common/Badge';
 import { EmptyState } from '@/components/common/EmptyState';
-import { getBookmarks, removeBookmark as removeBM } from '@/lib/bookmarkStore';
-import type { Bookmark } from '@/types';
+import { useBookmarks, removeBookmark as removeBM, useMounted } from '@/lib/bookmarkStore';
 
 const tabs = [
   { label: 'All', value: 'all' },
@@ -35,17 +34,14 @@ function formatSavedAt(isoString: string): string {
 
 export default function BookmarksPage() {
   const [activeTab, setActiveTab] = useState('all');
-  // Lazy init from localStorage — avoids useEffect setState cascade
-  const [bookmarks, setBookmarks] = useState<Bookmark[]>(() => {
-    if (typeof window === 'undefined') return [];
-    return getBookmarks();
-  });
+  const mounted = useMounted();
+  const allBookmarks = useBookmarks();
+  const bookmarks = mounted ? allBookmarks : [];
 
   const filtered = bookmarks.filter(b => activeTab === 'all' || b.type === activeTab);
 
   const handleRemove = (id: string) => {
     removeBM(id);
-    setBookmarks(prev => prev.filter(b => b.id !== id));
   };
 
   return (

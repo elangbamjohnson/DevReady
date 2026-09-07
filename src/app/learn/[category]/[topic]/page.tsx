@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useEffect, useLayoutEffect, useState } from 'react';
+import { use, useEffect, useLayoutEffect } from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ChevronRight, Clock, CheckCircle2, MessageSquare, ArrowRight, Sparkles, BookOpen } from 'lucide-react';
@@ -18,67 +18,6 @@ import { markTopicComplete, useIsTopicComplete, recordTopicView, getTopicProgres
 
 const useIsomorphicLayoutEffect =
   typeof window !== 'undefined' ? useLayoutEffect : useEffect;
-
-function ArticleSkeleton() {
-  return (
-    <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10 animate-pulse">
-      {/* Breadcrumb Skeleton */}
-      <div className="flex items-center gap-2 mb-6">
-        <div className="h-3.5 w-12 rounded bg-surface-2" />
-        <div className="h-3 w-3 rounded bg-surface-2" />
-        <div className="h-3.5 w-16 rounded bg-surface-2" />
-        <div className="h-3 w-3 rounded bg-surface-2" />
-        <div className="h-3.5 w-24 rounded bg-surface-2" />
-      </div>
-
-      <div className="flex gap-8 xl:gap-12">
-        <div className="flex-1 min-w-0">
-          {/* Header Skeleton */}
-          <div className="mb-8 pb-6 border-b border-border-default">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-5 w-20 rounded-full bg-surface-2" />
-              <div className="h-5 w-16 rounded-full bg-surface-2" />
-              <div className="h-4 w-20 rounded bg-surface-2 ml-auto" />
-            </div>
-            <div className="h-8 sm:h-10 w-3/4 max-w-lg rounded-lg bg-surface-2" />
-            <div className="h-4 w-full max-w-md rounded bg-surface-2 mt-3" />
-            <div className="h-4 w-2/3 max-w-sm rounded bg-surface-2 mt-2" />
-          </div>
-
-          {/* Quick Answer Skeleton Card */}
-          <div className="h-28 rounded-xl bg-surface-1 border border-border-default mb-8" />
-
-          {/* Paragraph Skeletons */}
-          <div className="space-y-3 mb-8">
-            <div className="h-4 w-full rounded bg-surface-2" />
-            <div className="h-4 w-11/12 rounded bg-surface-2" />
-            <div className="h-4 w-4/5 rounded bg-surface-2" />
-          </div>
-
-          {/* Code Block Skeleton */}
-          <div className="h-44 rounded-xl bg-surface-1 border border-border-default mb-8" />
-
-          {/* Paragraph Skeletons */}
-          <div className="space-y-3">
-            <div className="h-4 w-full rounded bg-surface-2" />
-            <div className="h-4 w-3/4 rounded bg-surface-2" />
-          </div>
-        </div>
-
-        {/* Desktop TOC Skeleton */}
-        <div className="hidden xl:block w-56 shrink-0">
-          <div className="h-4 w-24 rounded bg-surface-2 mb-4" />
-          <div className="space-y-2.5">
-            <div className="h-3.5 w-36 rounded bg-surface-2" />
-            <div className="h-3.5 w-28 rounded bg-surface-2 pl-3" />
-            <div className="h-3.5 w-40 rounded bg-surface-2" />
-            <div className="h-3.5 w-32 rounded bg-surface-2" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface TopicPageProps {
   params: Promise<{ category: string; topic: string }>;
@@ -114,26 +53,11 @@ export default function TopicPage({ params }: TopicPageProps) {
     }
   }, [topicId]);
 
-  const existing = getTopicProgress(topicId);
-  const savedProgress = existing?.progress ?? 0;
-  const needsRestore = savedProgress > 3;
-
-  // Start hidden ONLY if there's something to restore — new views skip this entirely
-  const [isPositioned, setIsPositioned] = useState(!needsRestore);
-  const [prevTopicId, setPrevTopicId] = useState(topicId);
-
-  // Sync state if topicId changes
-  if (prevTopicId !== topicId) {
-    setPrevTopicId(topicId);
-    setIsPositioned(!needsRestore);
-  }
-
   // Synchronous scroll position restoration before paint
   useIsomorphicLayoutEffect(() => {
-    if (!needsRestore) {
-      setIsPositioned(true);
-      return;
-    }
+    const existing = getTopicProgress(topicId);
+    const savedProgress = existing?.progress ?? 0;
+    if (savedProgress <= 3) return;
 
     if (typeof window !== 'undefined' && 'scrollRestoration' in window.history) {
       window.history.scrollRestoration = 'manual';
@@ -153,13 +77,11 @@ export default function TopicPage({ params }: TopicPageProps) {
       window.scrollTo({ top: targetY, behavior: 'instant' as ScrollBehavior });
     }
 
-    setIsPositioned(true);
-
     return () => {
       window.removeEventListener('wheel', onUserScroll);
       window.removeEventListener('touchmove', onUserScroll);
     };
-  }, [topicId, needsRestore, savedProgress]);
+  }, [topicId]);
 
   const handleMarkComplete = () => {
     markTopicComplete(topicId);
@@ -173,18 +95,7 @@ export default function TopicPage({ params }: TopicPageProps) {
       <>
         <ReadingProgress topicId={topicId} />
         <AppShell>
-          <div className="relative">
-            {!isPositioned && (
-              <div className="absolute inset-0 z-20 bg-surface-0 min-h-screen">
-                <ArticleSkeleton />
-              </div>
-            )}
-            <div
-              style={{ visibility: isPositioned ? 'visible' : 'hidden' }}
-              aria-hidden={!isPositioned}
-              suppressHydrationWarning
-              className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10"
-            >
+          <div className="max-w-[1200px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
             {/* Breadcrumb */}
             <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-text-tertiary mb-6 flex-wrap">
               <Link href="/learn?browse=1" className="hover:text-text-primary transition-colors">Learn</Link>
@@ -265,7 +176,6 @@ export default function TopicPage({ params }: TopicPageProps) {
               <ArticleTOCDesktop blocks={artTopic.content} />
             </div>
           </div>
-        </div>
       </AppShell>
     </>
   );
@@ -276,18 +186,7 @@ export default function TopicPage({ params }: TopicPageProps) {
     <>
       <ReadingProgress topicId={topicId} />
       <AppShell>
-        <div className="relative">
-          {!isPositioned && (
-            <div className="absolute inset-0 z-20 bg-surface-0 min-h-screen">
-              <ArticleSkeleton />
-            </div>
-          )}
-          <div
-            style={{ visibility: isPositioned ? 'visible' : 'hidden' }}
-            aria-hidden={!isPositioned}
-            suppressHydrationWarning
-            className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-10"
-          >
+        <div className="max-w-[900px] mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-xs text-neutral-400 mb-6 flex-wrap">
           <Link href="/learn?browse=1" className="hover:text-white transition-colors">Learn</Link>
@@ -386,7 +285,6 @@ export default function TopicPage({ params }: TopicPageProps) {
             </button>
           </div>
         </div>
-      </div>
       </div>
     </AppShell>
     </>
