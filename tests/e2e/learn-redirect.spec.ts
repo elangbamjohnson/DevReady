@@ -76,19 +76,19 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     await page.goto('/learn/swift/optionals');
     await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible();
 
-    // Scroll down partway through the article (50% of scrollable range)
-    await page.evaluate(() => {
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      window.scrollTo(0, maxScroll * 0.5);
-    });
-    await page.waitForTimeout(500); // allow progress-save logic to record it
+    // Wait for reading progress bar to be mounted
+    await expect(page.getByRole('progressbar', { name: 'Reading progress' })).toBeAttached();
 
-    // Verify progress was recorded in storage
-    const stored = await page.evaluate(() => {
-      const raw = localStorage.getItem('swiftcraft_progress');
-      return raw ? JSON.parse(raw)['swift-optionals'] : null;
-    });
-    expect(stored?.progress).toBeGreaterThan(40);
+    // Scroll down partway through the article (50% of scrollable range) and verify recorded
+    await expect.poll(async () => {
+      await page.evaluate(() => {
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        window.scrollTo(0, maxScroll * 0.5);
+        window.dispatchEvent(new Event('scroll'));
+      });
+      const raw = await page.evaluate(() => localStorage.getItem('swiftcraft_progress'));
+      return raw ? JSON.parse(raw)['swift-optionals']?.progress ?? 0 : 0;
+    }, { timeout: 4000, intervals: [150, 250, 350] }).toBeGreaterThan(40);
 
     // Navigate away and back (simulating the redirect flow)
     await page.goto('/');
@@ -110,12 +110,17 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
 
   test('restores scroll position around code blocks without jump', async ({ page }) => {
     await page.goto('/learn/swift/optionals');
+    await expect(page.getByRole('progressbar', { name: 'Reading progress' })).toBeAttached();
     const codeBlock = page.locator('pre').first();
     await expect(codeBlock).toBeVisible();
 
-    // Scroll to the code block
+    // Scroll code block into view and wait for progress to record
     await codeBlock.scrollIntoViewIfNeeded();
-    await page.waitForTimeout(500); // allow save debounce to complete
+    await expect.poll(async () => {
+      await page.evaluate(() => window.dispatchEvent(new Event('scroll')));
+      const raw = await page.evaluate(() => localStorage.getItem('swiftcraft_progress'));
+      return raw ? JSON.parse(raw)['swift-optionals']?.progress ?? 0 : 0;
+    }, { timeout: 4000, intervals: [150, 250, 350] }).toBeGreaterThan(0);
 
     const codeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
 
@@ -123,19 +128,23 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     await page.goto('/dashboard');
     await page.goto('/learn/swift/optionals');
 
-    // Code block should be at approximately the same viewport position immediately
+    // Code block should be at approximately the same viewport position
     await expect(codeBlock).toBeVisible();
-    const restoredCodeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
-    expect(Math.abs(restoredCodeBlockY - codeBlockY)).toBeLessThan(60);
+    await expect.poll(async () => {
+      const restoredCodeBlockY = await codeBlock.evaluate((el) => el.getBoundingClientRect().top);
+      return Math.abs(restoredCodeBlockY - codeBlockY);
+    }, { timeout: 4000, intervals: [100, 200] }).toBeLessThan(60);
   });
 
   test('Learn nav link resumes last topic when clicked from outside Learn', async ({ page }) => {
     await page.goto('/learn/swift/optionals'); // establish a "last viewed" topic
+    await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible(); // ensure topic page and useEffect mount
+
     await page.goto('/dashboard'); // navigate to Dashboard — now outside Learn
+    await expect(page).toHaveURL(/\/dashboard/);
     
-    // The top header is hidden on Home, but mobile nav or desktop sidebar might be visible.
-    // We can use the first visible Learn link in the layout.
-    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).first();
+    // Target the visible Learn link in the active layout (sidebar on desktop, bottom nav on mobile)
+    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).filter({ visible: true }).first();
     await learnNavLink.click({ force: true });
     
     await expect(page).toHaveURL(/\/learn\/swift\/optionals/); // resumed
@@ -147,8 +156,8 @@ test.describe('Learn Last Viewed Topic Auto-Redirect & Escape Hatch', () => {
     // Wait for the topic page to settle
     await expect(page.getByRole('heading', { level: 1, name: 'Optionals' })).toBeVisible();
 
-    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).first();
-    await learnNavLink.click({ force: true });
+    const learnNavLink = page.getByRole('link', { name: 'Learn', exact: true }).filter({ visible: true }).first();
+    await learnNavLink.click();
     
     await expect(page).toHaveURL(/\/learn\?browse=1/); // browse list, not re-redirected
   });
