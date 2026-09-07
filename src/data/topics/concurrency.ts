@@ -651,11 +651,28 @@ Always use asynchronous primitives: \`await Task.sleep()\` instead of \`Thread.s
     group: 'Swift Concurrency',
     description: 'Create and manage concurrent work units using Task. Understand task hierarchy, cancellation, and priority.',
     difficulty: 'mid',
-    estimatedTime: 10,
+    estimatedTime: 16,
     language: 'swift',
-    version: { language: 'Swift', version: '5.5', status: 'current', minimumVersion: '5.5', lastReviewed: '2026-09-01' },
+    version: { language: 'Swift', version: '6', status: 'current', minimumVersion: '5.5', lastReviewed: '2026-09-01' },
     interviewRelevance: 'high',
-    tags: ['task', 'cancellation', 'priority', 'structured-concurrency'],
+    tags: ['task', 'cancellation', 'priority', 'structured-concurrency', 'detached', 'task-local', 'sendable'],
+    furtherReading: [
+      {
+        title: 'Task — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/task',
+        source: 'apple-developer',
+      },
+      {
+        title: 'TaskPriority — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/taskpriority',
+        source: 'apple-developer',
+      },
+      {
+        title: 'Concurrency — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency',
+        source: 'swift-org',
+      },
+    ],
     relatedTopics: ['concurrency-async-await', 'concurrency-task-groups', 'concurrency-actors'],
     previousTopic: 'concurrency-async-await',
     nextTopic: 'concurrency-task-groups',
@@ -663,22 +680,75 @@ Always use asynchronous primitives: \`await Task.sleep()\` instead of \`Thread.s
       {
         type: 'quickAnswer',
         id: 'qa',
-        content: 'A `Task` creates a new concurrent unit of work that can run asynchronously. Tasks can be awaited for their result, cancelled, and carry priority and local values through the task tree.',
+        content: 'A `Task` creates a new, independently-scheduled unit of asynchronous work. Every task belongs to one of two families: **structured** (created with `async let` or a `TaskGroup`, and bound to the lifetime of its parent) or **unstructured** (created with `Task { }` or `Task.detached { }`, and free to outlive the scope that created it). Tasks carry a priority, participate in cooperative cancellation, and can share task-local values down the task tree.',
+      },
+      {
+        type: 'heading',
+        id: 'h-structured',
+        level: 2,
+        content: 'Structured vs. Unstructured Concurrency',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-structured-intro',
+        content: "\"Structured concurrency\" means a child task's lifetime is tied to the scope that created it. With `async let` or a `TaskGroup`, the compiler guarantees the parent can't return until all its children finish, cancelling the parent automatically cancels every child, and an error thrown by a child automatically propagates to the parent. `Task { }` and `Task.detached { }` opt **out** of all of this — they're 'unstructured' because nothing ties their lifetime, cancellation, or errors back to the code that created them unless you do it yourself.",
+      },
+      {
+        type: 'table',
+        id: 't-task-comparison',
+        caption: 'How the three ways of starting work differ',
+        headers: ['Dimension', 'Structured (async let / TaskGroup)', 'Unstructured (Task { })', 'Detached (Task.detached { })'],
+        rows: [
+          { cells: ['Lifetime', "Bound to the enclosing scope — can't outlive it", 'Independent — can outlive the creating scope', 'Independent — can outlive the creating scope'] },
+          { cells: ['Cancellation', 'Propagates automatically when the parent is cancelled', 'Must call `.cancel()` manually', 'Must call `.cancel()` manually'] },
+          { cells: ['Waiting', 'Parent implicitly awaits all children before returning', 'Not awaited unless you explicitly `await task.value`', 'Not awaited unless you explicitly `await task.value`'] },
+          { cells: ['Inherits from creator', 'Actor isolation, priority, task-local values', 'Actor isolation, priority, task-local values', 'Nothing — runs with default priority, no actor isolation, no task locals'] },
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-creating',
+        level: 2,
+        content: 'Creating Work: Task vs. Task.detached',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-creating-intro',
+        content: "`Task { }` is what you reach for almost every time you bridge from synchronous code into `async` code — a button tap, `viewDidLoad`, a delegate callback. Because it inherits the priority, actor context, and task-local values of whoever created it, work started this way behaves predictably inside your app. `Task.detached { }` throws all of that inheritance away, which is why it should be rare in application code — reach for it only when the work must be provably independent of where it was started, such as a low-priority analytics flush that must not run on the Main Actor and must not inherit a caller's elevated priority.",
       },
       {
         type: 'code',
         id: 'code-task',
         language: 'swift',
-        content: `// Unstructured task — runs independently
+        content: `// Unstructured task — its lifetime is independent of this function.
+// It keeps running even after this function returns.
 let task = Task {
     await loadUserProfile()
 }
 
-// Cancel if needed
-task.cancel()
+// Somewhere later, in response to an event (e.g. the user navigating away):
+// task.cancel()
 
-// Await result
-let result = await task.value`,
+// Await its result whenever you actually need it:
+let profile = await task.value`,
+      },
+      {
+        type: 'code',
+        id: 'code-detached',
+        language: 'swift',
+        content: `// Task.detached inherits NOTHING from the calling context:
+// no actor isolation, no priority, no task-local values.
+Task.detached(priority: .background) {
+    // Runs fully independently — safe for work that must not
+    // inherit a caller's Main Actor isolation or elevated priority.
+    await flushAnalyticsBuffer()
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-cancellation',
+        level: 2,
+        content: 'Cooperative Cancellation',
       },
       {
         type: 'callout',
@@ -699,6 +769,77 @@ let result = await task.value`,
 }`,
       },
       {
+        type: 'paragraph',
+        id: 'p-cancel-followup',
+        content: "This is exactly why the comparison table above matters in practice: cancelling a `TaskGroup` automatically cancels every child inside it, but cancelling or dismissing the view that created a `Task { }` does **not** automatically cancel that task — it's unstructured. That's why production code (see the `UserProfileViewModel` pattern in the async/await topic) stores the `Task` handle and calls `.cancel()` on it explicitly, in `deinit` or before starting a new request.",
+      },
+      {
+        type: 'heading',
+        id: 'h-priority',
+        level: 2,
+        content: 'Task Priority & Priority Escalation',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-priority-intro',
+        content: "Every task has a `TaskPriority`: `.high` (an alias for `.userInitiated`), `.medium` (the default), `.low` (an alias for `.utility`), or `.background`. A `Task { }` inherits its priority from the context that created it unless you specify one explicitly. The runtime also performs **priority escalation**: if a high-priority task ends up `await`-ing the result of a lower-priority task, the lower task's priority is temporarily boosted for as long as it's being waited on. This prevents priority inversion — a low-priority task holding up a high-priority one indefinitely.",
+      },
+      {
+        type: 'code',
+        id: 'code-priority',
+        language: 'swift',
+        content: `// Explicitly set a low priority for non-urgent background work
+Task(priority: .background) {
+    await syncOfflineCache()
+}
+
+// Read the priority of the currently running task
+let current = Task.currentPriority`,
+      },
+      {
+        type: 'heading',
+        id: 'h-task-locals',
+        level: 2,
+        content: 'Task-Local Values',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-task-locals-intro',
+        content: "`@TaskLocal` lets you bind a value that flows implicitly down the task tree — into structured children automatically, and into `Task { }` because it inherits its creator's task locals — without threading it through every function signature. It's commonly used for things like a request ID that every log line inside a network call should include.",
+      },
+      {
+        type: 'code',
+        id: 'code-task-locals',
+        language: 'swift',
+        content: `enum RequestContext {
+    @TaskLocal static var requestID: String?
+}
+
+func handleRequest() async {
+    await RequestContext.$requestID.withValue(UUID().uuidString) {
+        await performWork()
+    }
+}
+
+func performWork() async {
+    // Reads the value bound by whichever caller set it — no parameter needed.
+    print("Handling request: \\(RequestContext.requestID ?? "unknown")")
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-sendable',
+        level: 2,
+        content: 'Swift 6: Sendable Closures',
+      },
+      {
+        type: 'callout',
+        id: 'c-sendable',
+        variant: 'warning',
+        title: 'Captured Values Must Be Sendable',
+        content: "Under Swift 6's strict concurrency checking, the closure you pass to `Task { }` or `Task.detached { }` is implicitly `@Sendable`. Any value it captures — including `self` — must conform to `Sendable`, or the compiler raises a data-race error at compile time. This is why `Task { [weak self] in ... }` matters for a class-based `ObservableObject`: capturing a non-Sendable reference type safely requires either `@MainActor` isolation on the whole class or explicit synchronization.",
+      },
+      {
         type: 'interview',
         id: 'interview',
         relevance: 'high',
@@ -706,7 +847,9 @@ let result = await task.value`,
           'What is the difference between structured and unstructured concurrency?',
           'How does task cancellation work in Swift?',
           'What is a detached task and when would you use one?',
-          'How do task priorities affect scheduling?',
+          'How do task priorities affect scheduling, and what is priority escalation?',
+          "If you cancel a TaskGroup's parent task, what happens to its children? Does the same thing happen to a Task { } created inside that parent?",
+          'What are task-local values, and how do they differ from passing a value as a regular function parameter?',
         ],
       },
       {
