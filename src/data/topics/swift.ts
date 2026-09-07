@@ -5698,6 +5698,11 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
       "title": "Combine: AnyPublisher Documentation",
       "url": "https://developer.apple.com/documentation/combine/anypublisher",
       "source": "apple-developer"
+    },
+    {
+      "title": "Combine: AnyCancellable Documentation",
+      "url": "https://developer.apple.com/documentation/combine/anycancellable",
+      "source": "apple-developer"
     }
   ],
   "content": [
@@ -5726,14 +5731,39 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
     {
       "type": "paragraph",
       "id": "p-building",
-      "content": "There are two common ways to build a type eraser: closure-based forwarding and class-based box hierarchies. Here is the closure-based approach for an `AnySpeaker` wrapper:"
+      "content": "There are two common ways to build a custom type eraser: closure-based forwarding and class-based box hierarchies. Here is the closure-based approach for an `AnySpeaker` wrapper:"
     },
     {
       "type": "code",
       "id": "code-eraser",
       "language": "swift",
       "caption": "Closure-based custom type eraser wrapper struct",
-      "content": "protocol Speaker {\n    associatedtype Message\n    func speak() -> Message\n}\n\n// 1. Generic wrapper over only the associated type, NOT the concrete type T\nstruct AnySpeaker<Message>: Speaker {\n    // 2. Closure capturing the protocol method\n    private let _speak: () -> Message\n    \n    // 3. Generic initializer accepts any conforming type and erases T\n    init<T: Speaker>(_ speaker: T) where T.Message == Message {\n        self._speak = speaker.speak\n    }\n    \n    // 4. Forward protocol calls directly to stored closure\n    func speak() -> Message {\n        return _speak()\n    }\n}\n\nstruct Human: Speaker {\n    func speak() -> String { \"Hello world!\" }\n}\n\nstruct Robot: Speaker {\n    func speak() -> String { \"Beep boop!\" }\n}\n\n// Heterogeneous collection of speakers sharing the same Message type\nlet speakers: [AnySpeaker<String>] = [AnySpeaker(Human()), AnySpeaker(Robot())]"
+      "content": "protocol Speaker {\n    associatedtype Message\n    func speak() -> Message\n}\n\n// 1. Generic wrapper over only the associated type, NOT the concrete type T\nstruct AnySpeaker<Message>: Speaker {\n    // 2. Closure capturing the protocol method\n    private let _speak: () -> Message\n    \n    // 3. Generic initializer accepts any conforming type and erases T\n    init<T: Speaker>(_ speaker: T) where T.Message == Message {\n        self._speak = speaker.speak\n    }\n    \n    // 4. Forward protocol calls directly to stored closure\n    func speak() -> Message {\n        return _speak()\n    }\n}\n\nstruct Human: Speaker {\n    func speak() -> String { \"Hello world!\" }\n}\n\nstruct Robot: Speaker {\n    func speak() -> String { \"Beep boop!\" }\n}\n\n// Heterogeneous collection of speakers sharing the same Message type\nlet speakers: [AnySpeaker<String>] = [AnySpeaker(Human()), AnySpeaker(Robot())]\n\nfor speaker in speakers {\n    print(speaker.speak())\n}\n// prints: Hello world!\n// prints: Beep boop!"
+    },
+    {
+      "type": "heading",
+      "id": "h-class-box",
+      "level": 2,
+      "content": "Class-Box Hierarchy Pattern"
+    },
+    {
+      "type": "paragraph",
+      "id": "p-class-box",
+      "content": "Before Swift 5.7, the standard library implemented type erasers like `AnyIterator` and `AnySequence` using a class-box hierarchy. An abstract private base class defines the protocol interface, while a generic private subclass wraps the concrete type. A public value struct holds a reference to the base class, forwarding calls and preserving value semantics:"
+    },
+    {
+      "type": "code",
+      "id": "code-box-eraser",
+      "language": "swift",
+      "caption": "Class-box hierarchy type erasure pattern (as used in AnySequence and AnyIterator)",
+      "content": "protocol Repository {\n    associatedtype Item\n    func fetchAll() -> [Item]\n}\n\n// 1. Abstract base class (defines interface, erases the concrete type)\nprivate class _AnyRepositoryBase<Item>: Repository {\n    func fetchAll() -> [Item] {\n        fatalError(\"Must be overridden by subclass\")\n    }\n}\n\n// 2. Concrete subclass holding the specific conforming instance\nprivate final class _AnyRepositoryBox<Concrete: Repository>: _AnyRepositoryBase<Concrete.Item> {\n    private let _concrete: Concrete\n    \n    init(_ concrete: Concrete) {\n        self._concrete = concrete\n    }\n    \n    override func fetchAll() -> [Concrete.Item] {\n        return _concrete.fetchAll()\n    }\n}\n\n// 3. Public value wrapper maintaining value semantics and clean API\npublic struct AnyRepository<Item>: Repository {\n    private let _box: _AnyRepositoryBase<Item>\n    \n    public init<R: Repository>(_ repository: R) where R.Item == Item {\n        self._box = _AnyRepositoryBox(repository)\n    }\n    \n    public func fetchAll() -> [Item] {\n        return _box.fetchAll()\n    }\n}\n\n// Conforming concrete types\nstruct DatabaseRepo: Repository {\n    func fetchAll() -> [String] { [\"User_1\", \"User_2\"] }\n}\n\nstruct MockRepo: Repository {\n    func fetchAll() -> [String] { [\"Mock_Admin\"] }\n}\n\n// Heterogeneous collection using class-box type erasure\nlet repositories: [AnyRepository<String>] = [\n    AnyRepository(DatabaseRepo()),\n    AnyRepository(MockRepo())\n]\n\nfor repo in repositories {\n    print(repo.fetchAll())\n}\n// prints: [\"User_1\", \"User_2\"]\n// prints: [\"Mock_Admin\"]"
+    },
+    {
+      "type": "callout",
+      "id": "c-erasure-strategies",
+      "variant": "tip",
+      "title": "Choosing Between Type Erasure Strategies",
+      "content": "• **Closure-based erasure:** Flexible and lightweight for protocols with 1–2 methods, but incurs a closure allocation per method and requires care to avoid retain cycles.\n• **Class-box erasure:** Classic Apple stdlib pattern (used in AnySequence and AnyIterator). Better for protocols with many requirements and enables virtual dispatch with a single heap allocation.\n• **any existential (Swift 5.7+):** Preferred in modern Swift codebases (e.g. `any Sequence<Item>`). Zero boilerplate, compiler-managed existential containers, and built-in existential opening."
     },
     {
       "type": "table",
@@ -5799,6 +5829,18 @@ print(s.$theme)   // ["Changed to light", "Changed to system"]`,
         "**AnyPublisher (Combine):** Erases sprawling reactive pipeline types (`Publishers.Map<Publishers.Filter<...>>`) into clean public API contracts (`eraseToAnyPublisher()`).",
         "**AnyCancellable (Combine):** An autoreleasing subscription token that cancels on `deinit` and can be stored in a `Set<AnyCancellable>`."
       ]
+    },
+    {
+      "type": "paragraph",
+      "id": "p-combine-eraser",
+      "content": "Combine's `AnyPublisher` and `AnyCancellable` represent the most prominent real-world applications of type erasure in modern Apple frameworks. Calling `eraseToAnyPublisher()` abstracts deeply nested generic publisher operator chains into clean API contracts:"
+    },
+    {
+      "type": "code",
+      "id": "code-combine-eraser",
+      "language": "swift",
+      "caption": "Combine's AnyPublisher & AnyCancellable: Erasing nested publisher operator chains",
+      "content": "import Combine\n\n// Service protocol returning erased Publisher\nprotocol DataService {\n    func fetchCount() -> AnyPublisher<Int, Never>\n}\n\nfinal class CounterService: DataService {\n    // Pipeline creates complex type: Publishers.Map<Just<Int>, Int>\n    // eraseToAnyPublisher() hides internal pipeline operators from callers\n    func fetchCount() -> AnyPublisher<Int, Never> {\n        Just(42)\n            .map { $0 * 2 }\n            .eraseToAnyPublisher()\n    }\n}\n\nvar cancellables = Set<AnyCancellable>()\nlet service: DataService = CounterService()\n\n// AnyCancellable erases subscription tokens and cancels on deinit\nservice.fetchCount()\n    .sink { value in\n        print(\"Received: \\(value)\")\n    }\n    .store(in: &cancellables)\n\n// prints: Received: 84\n\n// Contrast with Swift 5.7+:\n// With primary associated types, you can also write:\n// func fetchCount() -> any Publisher<Int, Never>\n// but AnyPublisher remains standard in Combine for ABI stability."
     },
     {
       "type": "heading",
