@@ -67,7 +67,7 @@ export const objcQuestions: InterviewQuestion[] = [
         difficulty: 'intermediate',
       },
     ],
-    relatedTopics: ['objc-method-swizzling', 'swift-dispatch-witness-tables'],
+    relatedTopics: ['objc-method-swizzling', 'swift-method-dispatch'],
   },
   {
     id: 'interview.objc.property_attributes_copy.003',
