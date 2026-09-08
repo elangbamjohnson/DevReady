@@ -69,6 +69,48 @@ describe('Curriculum Content Integrity', () => {
     });
   });
 
+  it('enforces bidirectional symmetry between adjacent article topics', () => {
+    const articleMap = new Map(allArticleTopics.map((t) => [t.id, t]));
+
+    allArticleTopics.forEach((article) => {
+      if (article.nextTopic) {
+        const nextArticle = articleMap.get(article.nextTopic);
+        if (nextArticle) {
+          expect(
+            nextArticle.previousTopic,
+            `Expected "${nextArticle.id}" previousTopic to be "${article.id}", but got "${nextArticle.previousTopic}"`
+          ).toBe(article.id);
+        }
+      }
+      if (article.previousTopic) {
+        const prevArticle = articleMap.get(article.previousTopic);
+        if (prevArticle) {
+          expect(
+            prevArticle.nextTopic,
+            `Expected "${prevArticle.id}" nextTopic to be "${article.id}", but got "${prevArticle.nextTopic}"`
+          ).toBe(article.id);
+        }
+      }
+    });
+  });
+
+  it('ensures Swift domain article navigation strictly matches curriculum order', () => {
+    const swiftDomain = CURRICULUM_DOMAINS.find((d) => d.id === 'swift')!;
+    const swiftCurriculumTopics = swiftDomain.modules.flatMap((m) => m.topics);
+    const articleMap = new Map(allArticleTopics.map((t) => [t.id, t]));
+
+    for (let i = 0; i < swiftCurriculumTopics.length; i++) {
+      const cur = swiftCurriculumTopics[i];
+      const prev = i > 0 ? swiftCurriculumTopics[i - 1] : undefined;
+      const next = i < swiftCurriculumTopics.length - 1 ? swiftCurriculumTopics[i + 1] : undefined;
+
+      const article = articleMap.get(cur.id);
+      expect(article, `Expected article for "${cur.id}"`).toBeDefined();
+      expect(article?.previousTopic).toBe(prev?.id);
+      expect(article?.nextTopic).toBe(next?.id);
+    }
+  });
+
   it('validates that all interview questions reference existing curriculum topic IDs', () => {
     const validTopicIds = new Set(CURRICULUM_TOPICS.map((t) => t.id));
 

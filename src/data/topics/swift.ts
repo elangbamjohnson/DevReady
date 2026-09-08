@@ -209,6 +209,7 @@ struct StrongUserID {
         source: 'swift-org',
       },
     ],
+    previousTopic: 'swift-variables-types',
     nextTopic: 'swift-struct-vs-class',
     content: [
       {
@@ -369,7 +370,7 @@ if let name {
       },
     ],
     previousTopic: 'swift-optionals',
-    nextTopic: 'swift-closures',
+    nextTopic: 'swift-control-flow',
     content: [
       {
         type: 'quickAnswer',
@@ -589,8 +590,8 @@ You don't need to implement CoW for simple structs — just use them naturally. 
         source: 'swift-org',
       },
     ],
-    previousTopic: 'swift-struct-vs-class',
-    nextTopic: 'swift-control-flow',
+    previousTopic: 'swift-functions',
+    nextTopic: 'swift-collections',
     content: [
       {
         type: 'quickAnswer',
@@ -946,7 +947,7 @@ logIfDebug("expensive computation")  // No braces needed
         source: 'swift-org',
       },
     ],
-    previousTopic: 'swift-closures',
+    previousTopic: 'swift-struct-vs-class',
     nextTopic: 'swift-functions',
     content: [
       {
@@ -1401,7 +1402,7 @@ repeat {
       },
     ],
     previousTopic: 'swift-control-flow',
-    nextTopic: 'swift-collections',
+    nextTopic: 'swift-closures',
     content: [
       {
         type: 'quickAnswer',
@@ -1815,7 +1816,7 @@ print(q, r)  // 3 2`,
         source: 'apple-developer',
       },
     ],
-    previousTopic: 'swift-functions',
+    previousTopic: 'swift-closures',
     nextTopic: 'swift-strings',
     content: [
       {
