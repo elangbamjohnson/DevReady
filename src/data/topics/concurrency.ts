@@ -1038,21 +1038,77 @@ final class Configuration: Sendable {
     difficulty: 'senior',
     estimatedTime: 14,
     language: 'swift',
-    version: { language: 'Swift', version: '5.5', status: 'current', minimumVersion: '5.5', lastReviewed: '2026-09-01' },
+    version: { language: 'Swift', version: '6', status: 'current', minimumVersion: '5.5', lastReviewed: '2026-09-01' },
     interviewRelevance: 'high',
     tags: ['task-group', 'structured-concurrency', 'cancellation', 'parallel'],
+    furtherReading: [
+      {
+        title: 'TaskGroup — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/taskgroup',
+        source: 'apple-developer',
+      },
+      {
+        title: 'ThrowingTaskGroup — Swift Standard Library',
+        url: 'https://developer.apple.com/documentation/swift/throwingtaskgroup',
+        source: 'apple-developer',
+      },
+      {
+        title: 'Concurrency — The Swift Programming Language',
+        url: 'https://docs.swift.org/swift-book/documentation/the-swift-programming-language/concurrency',
+        source: 'swift-org',
+      },
+    ],
     relatedTopics: ['concurrency-task', 'concurrency-async-await', 'concurrency-actors'],
-    previousTopic: 'concurrency-sendable',
+    previousTopic: 'concurrency-task',
+    nextTopic: 'concurrency-actors',
     content: [
       {
         type: 'quickAnswer',
         id: 'qa',
-        content: '`TaskGroup` lets you run multiple concurrent tasks and collect their results. It provides structured concurrency guarantees: if any child task throws, the group automatically cancels remaining tasks.',
+        content: '`TaskGroup` lets you run many tasks at the same time and collect their results. If a child task throws, and you let that error escape the group (instead of catching it yourself), Swift cancels every task that hasn\'t finished yet. But if you catch the error inside your own code, nothing is cancelled automatically — you\'d need to call `group.cancelAll()` yourself.',
+      },
+      {
+        type: 'heading',
+        id: 'h-two-versions',
+        level: 2,
+        content: 'Two Versions: withTaskGroup and withThrowingTaskGroup',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-two-versions',
+        content: "There are two versions of this. Use `withTaskGroup` when none of your tasks can throw an error. Use `withThrowingTaskGroup` when they can. Both work the same way: add tasks with `group.addTask { }`, then read results with `for await` (no errors) or `for try await` (can throw).",
+      },
+      {
+        type: 'code',
+        id: 'code-group-nonthrowing',
+        language: 'swift',
+        caption: 'Non-throwing example: fetching a score for each player',
+        content: `func fetchAllScores(for players: [Player]) async -> [Int] {
+    await withTaskGroup(of: Int.self) { group in
+        for player in players {
+            group.addTask {
+                await fetchScore(for: player)
+            }
+        }
+
+        var scores: [Int] = []
+        for await score in group {
+            scores.append(score)
+        }
+        return scores
+    }
+}`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-throwing-intro',
+        content: "Here's the same idea, but each task can throw an error:",
       },
       {
         type: 'code',
         id: 'code-group',
         language: 'swift',
+        caption: 'Throwing example: fetching a user for each id',
         content: `func fetchAllUsers(ids: [String]) async throws -> [User] {
     try await withThrowingTaskGroup(of: User.self) { group in
         for id in ids {
@@ -1068,7 +1124,69 @@ final class Configuration: Sendable {
         return users
     }
 }`,
-        caption: 'Fetching multiple users concurrently, collecting results as they complete.',
+      },
+      {
+        type: 'heading',
+        id: 'h-what-happens-on-throw',
+        level: 2,
+        content: 'What Happens When a Task Throws?',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-what-happens-on-throw',
+        content: "When a task throws and you read results with `for try await`, that error comes out of the loop the moment you reach it. If you don't catch it, it keeps going and exits `withThrowingTaskGroup` entirely. The moment that happens, Swift automatically cancels every task in the group that hasn't finished yet. If you'd rather keep the other tasks running, catch the error inside the loop instead of letting it escape — in that case nothing is cancelled unless you call `group.cancelAll()` yourself.",
+      },
+      {
+        type: 'callout',
+        id: 'c-cancelall',
+        variant: 'tip',
+        title: 'group.cancelAll()',
+        content: 'Call this whenever you want to stop the rest of the group early yourself — for example, as soon as you find the one result you were looking for.',
+      },
+      {
+        type: 'heading',
+        id: 'h-limiting-concurrency',
+        level: 2,
+        content: 'Limiting Concurrency',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-limiting-concurrency',
+        content: "If you have thousands of items, adding a task for every single one at once can use too much memory. The fix: only keep a fixed number of tasks running. Start a few, and every time one finishes, start the next one.",
+      },
+      {
+        type: 'code',
+        id: 'code-limiting-concurrency',
+        language: 'swift',
+        caption: 'Only 5 tasks run at once, no matter how many items there are',
+        content: `func processAll(_ items: [Item], maxConcurrent: Int = 5) async throws {
+    try await withThrowingTaskGroup(of: Void.self) { group in
+        var index = 0
+
+        // Start the first batch
+        while index < items.count && index < maxConcurrent {
+            let item = items[index]
+            group.addTask { try await process(item) }
+            index += 1
+        }
+
+        // Every time one finishes, start the next one
+        while try await group.next() != nil {
+            if index < items.count {
+                let item = items[index]
+                group.addTask { try await process(item) }
+                index += 1
+            }
+        }
+    }
+}`,
+      },
+      {
+        type: 'callout',
+        id: 'c-sendable-reminder',
+        variant: 'info',
+        title: 'Sendable, Same as Task { }',
+        content: "Just like `Task { }`, the closure you pass to `group.addTask { }` must be `@Sendable` under Swift 6. See the Sendable section in the Task topic if you need a refresher.",
       },
       {
         type: 'interview',
@@ -1084,7 +1202,7 @@ final class Configuration: Sendable {
       {
         type: 'relatedTopics',
         id: 'related',
-        topicIds: ['concurrency-task', 'concurrency-async-await'],
+        topicIds: ['concurrency-task', 'concurrency-async-await', 'concurrency-actors'],
       },
     ],
   },

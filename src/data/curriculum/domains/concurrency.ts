@@ -67,7 +67,7 @@ export const concurrencyDomain: CurriculumDomain = {
         {
           id: 'concurrency-task-groups',
           slug: 'task-groups-and-dynamic-parallelism',
-          title: 'TaskGroup & ThrowingTaskGroup for Dynamic Parallelism',
+          title: 'TaskGroup & Structured Concurrency',
           domainId: 'concurrency',
           moduleId: 'concurrency-async-mod',
           difficulty: 'advanced',
