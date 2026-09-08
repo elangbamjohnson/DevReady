@@ -774,10 +774,20 @@ Task.detached(priority: .background) {
         content: "This is exactly why the comparison table above matters in practice: cancelling a `TaskGroup` automatically cancels every child inside it, but cancelling or dismissing the view that created a `Task { }` does **not** automatically cancel that task — it's unstructured. That's why production code (see the `UserProfileViewModel` pattern in the async/await topic) stores the `Task` handle and calls `.cancel()` on it explicitly, in `deinit` or before starting a new request.",
       },
       {
+        type: 'paragraph',
+        id: 'p-swiftui-task-modifier',
+        content: "Don't confuse this with SwiftUI's `.task { }` **view modifier** — despite the similar name, that one *is* automatically cancelled when the view it's attached to disappears. `Task { }` the initializer and `.task { }` the view modifier look alike but behave differently; interviewers use this exact mix-up as a quick way to check real understanding.",
+      },
+      {
         type: 'heading',
         id: 'h-priority',
         level: 2,
         content: 'Task Priority & Priority Escalation',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-priority-framing',
+        content: "Everything above this point — Task vs. Task.detached, cancellation — is what you'll use day to day. This section and the Sendable section that follows go deeper into Swift 6 concurrency internals and come up more in senior/staff interviews specifically. If you're still getting comfortable with the fundamentals, it's fine to skim these on a first pass and come back once Task creation and cancellation feel natural.",
       },
       {
         type: 'paragraph',
@@ -788,13 +798,15 @@ Task.detached(priority: .background) {
         type: 'code',
         id: 'code-priority',
         language: 'swift',
-        content: `// Explicitly set a low priority for non-urgent background work
-Task(priority: .background) {
-    await syncOfflineCache()
+        content: `// TaskPriority reflects whichever task is currently running —
+// read it from inside a task, not from an unrelated call site.
+Task(priority: .utility) {
+    print(Task.currentPriority) // .utility — this task's own priority
 }
 
-// Read the priority of the currently running task
-let current = Task.currentPriority`,
+Task(priority: .background) {
+    print(Task.currentPriority) // .background — a different task, different priority
+}`,
       },
       {
         type: 'heading',
@@ -838,6 +850,24 @@ func performWork() async {
         variant: 'warning',
         title: 'Captured Values Must Be Sendable',
         content: "Under Swift 6's strict concurrency checking, the closure you pass to `Task { }` or `Task.detached { }` is implicitly `@Sendable`. Any value it captures — including `self` — must conform to `Sendable`, or the compiler raises a data-race error at compile time. This is why `Task { [weak self] in ... }` matters for a class-based `ObservableObject`: capturing a non-Sendable reference type safely requires either `@MainActor` isolation on the whole class or explicit synchronization.",
+      },
+      {
+        type: 'heading',
+        id: 'h-task-pitfalls',
+        level: 2,
+        content: 'Common Pitfalls & Golden Rules',
+      },
+      {
+        type: 'list',
+        id: 'l-task-pitfalls',
+        ordered: false,
+        items: [
+          "**Assuming a Task outlives nothing:** a `Task { }` can and does outlive the code that created it. Dismissing a view doesn't cancel it — you have to call `.cancel()` yourself.",
+          "**Confusing Task { } with SwiftUI's .task { } modifier:** only the view modifier auto-cancels when its view disappears. The initializer never does.",
+          "**Reaching for Task.detached by default:** it drops actor isolation, priority, and task-local values. Use plain `Task { }` unless the work must be provably independent of its creator.",
+          "**Treating priority as a hard guarantee:** priority affects scheduling order on the cooperative pool, and the runtime can escalate it — it's not a real-time guarantee of when work runs.",
+          "**Forgetting Task.checkCancellation() inside loops:** cancellation is cooperative. A task that never checks `isCancelled` or calls `checkCancellation()` never actually stops.",
+        ],
       },
       {
         type: 'interview',
