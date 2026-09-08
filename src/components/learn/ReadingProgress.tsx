@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { setTopicProgress, getTopicProgress } from '@/lib/progressStore';
+import { setTopicProgress } from '@/lib/progressStore';
 
 interface ReadingProgressProps {
   /** The element whose scroll triggers progress. Defaults to window. */
@@ -12,12 +12,7 @@ interface ReadingProgressProps {
 }
 
 export function ReadingProgress({ targetId, className, topicId }: ReadingProgressProps) {
-  const [progress, setProgress] = useState(() => {
-    if (topicId) {
-      return getTopicProgress(topicId)?.progress ?? 0;
-    }
-    return 0;
-  });
+  const [progress, setProgress] = useState(0);
 
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isInitialMount = useRef(true);
@@ -78,6 +73,7 @@ export function ReadingProgress({ targetId, className, topicId }: ReadingProgres
       aria-valuenow={Math.round(progress)}
       aria-valuemin={0}
       aria-valuemax={100}
+      suppressHydrationWarning
       className={cn('fixed top-0 left-0 right-0 h-[2px] z-50', className)}
     >
       <div
