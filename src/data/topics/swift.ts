@@ -575,13 +575,13 @@ You don't need to implement CoW for simple structs — just use them naturally. 
     title: 'Closures & Capture Lists',
     category: 'swift',
     group: 'Swift Fundamentals',
-    description: 'Master closure syntax, value capturing, escaping vs non-escaping closures, and memory-safe capture lists.',
+    description: 'Master closure syntax, reference vs value capturing semantics, escaping lifecycles, and memory-safe capture lists.',
     difficulty: 'mid',
-    estimatedTime: 12,
+    estimatedTime: 18,
     language: 'swift',
-    version: { language: 'Swift', version: '6', status: 'current', lastReviewed: '2026-09-01' },
+    version: { language: 'Swift', version: '6', status: 'current', lastReviewed: '2026-09-08' },
     interviewRelevance: 'high',
-    tags: ['closures', 'capture-list', 'weak-self', 'escaping', 'trailing-closure'],
+    tags: ['closures', 'capture-list', 'weak-self', 'unowned', 'escaping', 'trailing-closure'],
     relatedTopics: ['swift-struct-vs-class', 'memory-retain-cycles', 'memory-arc'],
     furtherReading: [
       {
@@ -596,332 +596,462 @@ You don't need to implement CoW for simple structs — just use them naturally. 
       {
         type: 'quickAnswer',
         id: 'qa',
-        content: 'A closure is a block of code you can pass around and execute later. Closures "capture" variables from the surrounding scope — they hold onto references to those variables so they can access them even after the surrounding scope is gone. This is powerful but requires care: a closure that captures `self` can accidentally keep an object alive forever (a retain cycle), unless you use `[weak self]` to break the cycle.',
+        content: 'A closure is a self-contained block of functionality that can be stored and executed later. In Swift, closures capture surrounding variables by reference by default, sharing live mutable state on the heap. Capture lists — defined in square brackets `[weak self, count]` at the start of a closure — let you customize capture semantics: snapshotting value types as immutable copies, breaking retain cycles via `[weak self]` or `[unowned self]`, and binding named expressions `[id = item.id]` without retaining parent objects.',
       },
       {
         type: 'heading',
         id: 'h-why',
         level: 2,
-        content: 'Why does it matter?',
+        content: 'Why Closures Matter in Swift & iOS',
       },
       {
         type: 'paragraph',
-        id: 'p-why-1',
-        content: "Closures are one of Swift's most powerful features — they unlock patterns that are hard or impossible in other languages.",
-      },
-      {
-        type: 'paragraph',
-        id: 'p-why-callbacks',
-        content: "Callbacks and event handlers: You pass a closure to a button so that when it's tapped, the closure runs. This is how UIKit (and much of iOS) works — you define what should happen, and the system calls you back later when the event occurs.",
-      },
-      {
-        type: 'paragraph',
-        id: 'p-why-fp',
-        content: 'Functional programming: Methods like `map`, `filter`, and `sorted` take closures as arguments. Instead of writing a loop each time, you describe the transformation and let the method handle iteration.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-why-async',
-        content: 'Asynchronous code: Network requests, timers, and other async operations need a way to tell you "I\'m done, here\'s the result" — closures are how that works.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-why-catch',
-        content: 'The catch: closures capture references to the variables they use. If a closure captures `self` and `self` also holds onto the closure (directly or indirectly), neither can ever be deallocated. This is a retain cycle, and it\'s a memory leak. Understanding how to avoid it — using `[weak self]` and `[unowned self]` correctly — is essential.',
-      },
-      {
-        type: 'heading',
-        id: 'h-how',
-        level: 2,
-        content: 'How does it work?',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-lifecycle-title',
-        content: '**Closure lifecycle**',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-lifecycle',
-        content: 'A closure is created when you write `{ ... }` in code. At that moment, the closure captures references to any variables from the surrounding scope that it references — storing them in a captures list. Then, the closure is either executed immediately (if you call it right away) or stored somewhere (in a property, passed to a function) to be executed later.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-capturing-title',
-        content: '**What "capturing" means**',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-capturing-intro',
-        content: 'When you write:',
-      },
-      {
-        type: 'code',
-        id: 'code-capturing',
-        language: 'swift',
-        content: `let x = 10
-let closure = { print(x) }`,
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-capturing-explain-1',
-        content: 'The closure captures `x` — it holds onto a reference to `x`. Even if `x` goes out of scope, the closure still has access to it, because the closure is keeping it alive.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-capturing-explain-2',
-        content: 'More precisely: the closure captures a *reference* to the variable, not a copy of its value (unless you explicitly capture the value with a capture list). So if `x` is later reassigned, the closure sees the new value.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-escaping-title',
-        content: '**Escaping vs non-escaping**',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-escaping-desc',
-        content: 'By default, closures passed as function arguments are **non-escaping** — they execute and return within the function call. The closure cannot outlive the function.',
-      },
-      {
-        type: 'code',
-        id: 'code-nonescaping',
-        language: 'swift',
-        content: `func execute(closure: () -> Void) {
-    closure()  // Non-escaping by default — closure runs here
-}
-execute { print("hello") }  // Runs immediately`,
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-escaping-stored',
-        content: 'If you want a closure to be stored and executed later, you mark it `@escaping`:',
-      },
-      {
-        type: 'code',
-        id: 'code-escaping',
-        language: 'swift',
-        content: `var savedClosure: (() -> Void)?
-
-func saveForLater(closure: @escaping () -> Void) {
-    savedClosure = closure  // This is allowed because @escaping tells the compiler
-}
-
-saveForLater { print("hello") }
-savedClosure?()  // Runs whenever we call it`,
-      },
-      {
-        type: 'paragraph',
-        id: 'p-how-distinction-title',
-        content: '**Why this distinction matters:**',
+        id: 'p-why-intro',
+        content: 'Closures are first-class citizens in Swift. You can assign them to variables, pass them as arguments, and return them from functions. They drive core iOS patterns across UIKit, SwiftUI, Combine, and modern concurrency.',
       },
       {
         type: 'list',
-        id: 'l-how-distinction',
+        id: 'l-why-pillars',
         ordered: false,
         items: [
-          'Non-escaping closures execute immediately on the stack — no memory overhead, no retain cycle risk.',
-          'Escaping closures are stored on the heap, which means they keep references to their captured variables alive. If an escaping closure captures `self` and `self` also holds the closure, neither can ever be released.',
+          '**Callbacks and Event Handlers:** Asynchronous events, UI actions, and completion handlers receive a closure to execute when work completes.',
+          '**Functional Transformations:** High-order collection operations like `map`, `filter`, `reduce`, and `sorted` accept closures describing element transformations.',
+          '**View Builders in SwiftUI:** Declarative UI hierarchies rely on trailing closures to construct view trees dynamically.',
+          '**The Memory Challenge:** Closures hold onto variables they reference. Without deliberate capture lists, escaping closures that capture reference types easily create strong reference cycles (retain cycles) that leak memory.',
         ],
       },
       {
         type: 'heading',
-        id: 'h-syntax',
+        id: 'h-syntax-anatomy',
         level: 2,
-        content: 'Syntax Shorthand',
+        content: 'Closure Expression Syntax & Shorthands',
       },
       {
         type: 'paragraph',
-        id: 'p-syntax-intro',
-        content: "Swift gives you multiple ways to write closures, from fully explicit to terse, so you can choose what's most readable for the situation.",
+        id: 'p-syntax-anatomy-desc',
+        content: 'Swift closure expressions follow a standard structure. The capture list always appears at the very beginning of the closure body, before parameters and the return type, followed by the `in` keyword.',
       },
       {
         type: 'code',
-        id: 'code-syntax',
+        id: 'code-closure-anatomy',
         language: 'swift',
-        content: `let numbers = [3, 1, 4, 1, 5]
-
-// Full form
-let sorted = numbers.sorted(by: { (a: Int, b: Int) -> Bool in a < b })
-
-// Type inference
-let sorted2 = numbers.sorted(by: { a, b in a < b })
-
-// Shorthand argument names
-let sorted3 = numbers.sorted(by: { $0 < $1 })
-
-// Trailing closure (when last argument is a closure)
-let sorted4 = numbers.sorted { $0 < $1 }`,
+        caption: 'Full closure structure including capture list',
+        content: `{ [captureList] (parameters) -> ReturnType in
+    // Closure execution statements
+    return value
+}`,
       },
       {
         type: 'paragraph',
-        id: 'p-syntax-guide',
-        content: "Which one should you use? Start with the fullest form that's still readable. If the closure is a one-liner doing something obvious (like sorting or filtering), shorthand names are fine. If it's doing something subtle or has multiple lines, explicit names are better — `numbers.sorted { $0 < $1 }` is clear, but `filter { $0.isActive }` is less clear than `filter { user in user.isActive }` if `isActive` isn't obvious from context.",
+        id: 'p-syntax-shorthand-desc',
+        content: 'Swift provides several syntax shorthands that allow you to omit boilerplate when types and intent are inferred from context:',
+      },
+      {
+        type: 'code',
+        id: 'code-syntax-shorthands',
+        language: 'swift',
+        caption: 'Progressive syntax simplification',
+        content: `let scores = [88, 95, 72, 64, 99]
+
+// 1. Fully explicit syntax
+let sorted1 = scores.sorted(by: { (a: Int, b: Int) -> Bool in
+    return a > b
+})
+
+// 2. Type inference (parameters and return type omitted)
+let sorted2 = scores.sorted(by: { a, b in a > b })
+
+// 3. Shorthand argument names ($0, $1) with implicit return
+let sorted3 = scores.sorted(by: { $0 > $1 })
+
+// 4. Trailing closure syntax (closure moved outside parentheses)
+let sorted4 = scores.sorted { $0 > $1 }
+
+// 5. Operator function reference (passing the '>' operator directly)
+let sorted5 = scores.sorted(by: >)`,
+      },
+      {
+        type: 'callout',
+        id: 'callout-syntax-guideline',
+        variant: 'tip',
+        title: 'Senior Style Guideline',
+        content: 'Use shorthand argument names (`$0`, `$1`) for concise, obvious one-liners like sort predicates or predicate filters. Use explicit named parameters (`{ user, transaction in ... }`) for multi-line blocks or business logic to preserve clarity and self-documenting code.',
       },
       {
         type: 'heading',
-        id: 'h-capture',
+        id: 'h-escaping-semantics',
         level: 2,
-        content: 'Capture Lists & Retain Cycles',
+        content: 'Escaping vs Non-Escaping Closures',
       },
       {
         type: 'paragraph',
-        id: 'p-cycle-title',
-        content: '**What is a retain cycle?**',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-cycle-desc-1',
-        content: 'In Swift, objects are kept alive by reference counts (ARC — Automatic Reference Counting). Every time a variable holds a reference to an object, its reference count goes up. When the reference goes away, the count goes down. When the count hits zero, the object is deallocated.',
-      },
-      {
-        type: 'paragraph',
-        id: 'p-cycle-desc-2',
-        content: 'A retain cycle happens when two objects keep references to each other:',
-      },
-      {
-        type: 'list',
-        id: 'l-cycle-def',
-        ordered: false,
-        items: [
-          'Object A holds a reference to Object B',
-          'Object B holds a reference to Object A',
-        ],
-      },
-      {
-        type: 'paragraph',
-        id: 'p-cycle-leak',
-        content: "Neither can ever be deallocated, because each is keeping the other alive. It's a memory leak. Closures are a common source of retain cycles in Swift:",
+        id: 'p-escaping-intro',
+        content: 'In Swift, closure parameters are **non-escaping by default**. A non-escaping closure is executed synchronously during the function call and cannot be retained or called after the function returns.',
       },
       {
         type: 'code',
-        id: 'code-cycle-api',
+        id: 'code-escaping-comparison',
         language: 'swift',
-        content: `class APIClient {
-    var onSuccess: (() -> Void)?
-    
-    func fetchData() {
-        // This closure captures self (so it can call self.handleResponse)
-        // And self holds onto the closure (via self.onSuccess)
-        // → retain cycle
-        self.onSuccess = {
-            self.handleResponse()  // closure captures self
+        caption: 'Non-escaping (default) vs escaping (@escaping)',
+        content: `// Non-escaping: executes and returns on the call stack
+func performNow(work: () -> Void) {
+    work() // Executed synchronously before performNow returns
+}
+
+// Escaping: stored or dispatched to run after function returns
+var pendingWork: [() -> Void] = []
+
+func scheduleForLater(work: @escaping () -> Void) {
+    pendingWork.append(work) // Stored on heap for future invocation
+}`,
+      },
+      {
+        type: 'list',
+        id: 'l-escaping-differences',
+        ordered: false,
+        items: [
+          '**Non-Escaping (`default`):** Runs on the call stack. Zero memory overhead, no heap allocation, and no possibility of retain cycles. You do NOT need `[weak self]`.',
+          '**Escaping (`@escaping`):** The closure outlives the enclosing function scope. It is allocated on the heap and retains its captured references. This is where capture lists are vital.',
+        ],
+      },
+      {
+        type: 'heading',
+        id: 'h-capture-fundamentals',
+        level: 2,
+        content: 'Capture Lists: Reference Capture vs Value Capture',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-capture-concept',
+        content: 'When a closure accesses a variable from its outer scope, it **captures** it. By default, Swift captures variables by **reference**. This means Swift allocates an internal reference box on the heap, and both the outer scope and the closure point to the exact same storage.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-capture-list-definition',
+        content: 'A **capture list** explicitly overrides this behavior for specified variables. Placed between square brackets `[...]` at the start of the closure, a capture list allows you to capture an immutable copy (snapshot) of a value type at the exact moment the closure is created.',
+      },
+      {
+        type: 'code',
+        id: 'code-value-vs-ref',
+        language: 'swift',
+        caption: 'Side-by-side: default reference capture vs capture list snapshot',
+        content: `var score = 10
+
+// 1. Default Capture (by Reference)
+// Captures a reference to 'score'. Sees any subsequent mutations.
+let readScoreByReference = {
+    print("Reference capture:", score)
+}
+
+// 2. Capture List (Value Snapshot)
+// Copies the current value of 'score' into an immutable constant 'let score'.
+let readScoreByValue = { [score] in
+    print("Capture list snapshot:", score)
+}
+
+score = 99
+
+readScoreByReference() // Prints: Reference capture: 99
+readScoreByValue()     // Prints: Capture list snapshot: 10`,
+      },
+      {
+        type: 'paragraph',
+        id: 'p-capture-immutability-detail',
+        content: 'There is a critical distinction in mutability: within `readScoreByReference`, you can mutate `score += 1`, and the outer variable will change. In contrast, inside `readScoreByValue`, `score` is an immutable constant (`let`). Attempting to reassign it inside the closure causes a compile error: `Cannot assign to value: "score" is an immutable capture`.',
+      },
+      {
+        type: 'callout',
+        id: 'callout-loop-capture-gotcha',
+        variant: 'important',
+        title: 'Classic Interview Gotcha: Closures in Loops',
+        content: `Consider creating closures inside a loop:
+
+\`\`\`swift
+var closures: [() -> Void] = []
+for index in 0..<3 {
+    closures.append { print("Default:", index) }
+    closures.append { [index] in print("Capture list:", index) }
+}
+\`\`\`
+
+In Swift, each loop iteration creates a new \`index\` binding. However, if an asynchronous block captures an outer mutable pointer or array index, capturing \`[index]\` guarantees you capture a fixed snapshot of that iteration rather than a delayed reference.`,
+      },
+      {
+        type: 'heading',
+        id: 'h-capture-named-expressions',
+        level: 2,
+        content: 'Capture List Initializers & Named Expressions',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-named-expressions-desc',
+        content: 'Capture lists can also declare and initialize brand-new constants using the syntax `[alias = expression]`. This is one of Swift’s most powerful and underutilized features for writing memory-safe architecture.',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-named-expressions-architectural-value',
+        content: 'If an escaping closure only needs a single property from an object (such as an ID, a title, or a configuration value), you can capture **only that value** instead of capturing the entire object (`self`). This eliminates retain cycles without requiring `[weak self]` or `guard let self` unwrap blocks.',
+      },
+      {
+        type: 'code',
+        id: 'code-named-capture-example',
+        language: 'swift',
+        caption: 'Capturing specific properties instead of capturing self',
+        content: `class OrderUploader {
+    let orderID: String
+    var onComplete: (() -> Void)?
+
+    init(orderID: String) {
+        self.orderID = orderID
+    }
+
+    func startUpload(networkService: NetworkService) {
+        // ✓ ARCHITECTURAL BEST PRACTICE:
+        // Captures only 'id' (a String value copy).
+        // 'self' is NOT captured at all! Zero retain cycle risk, no [weak self] needed.
+        networkService.upload { [id = self.orderID] success in
+            print("Finished uploading order: \\(id), success: \\(success)")
         }
     }
 }`,
       },
       {
         type: 'paragraph',
-        id: 'p-breaking-title',
-        content: '**Breaking the cycle with `[weak self]`**',
+        id: 'p-named-expressions-aliasing',
+        content: 'You can also use named expressions to alias or disambiguate references, such as `[weak target = self.view]` or capturing multiple items together: `[weak self, itemID = item.id, timestamp = Date()]`.',
+      },
+      {
+        type: 'heading',
+        id: 'h-retain-cycles',
+        level: 2,
+        content: 'Memory Management: Retain Cycles & ARC',
       },
       {
         type: 'paragraph',
-        id: 'p-breaking-desc-1',
-        content: "Mark the captured reference as `weak`, which means the closure doesn't keep the object alive:",
-      },
-      {
-        type: 'code',
-        id: 'code-weak-example',
-        language: 'swift',
-        content: `self.onSuccess = { [weak self] in
-    guard let self else { return }
-    self.handleResponse()
-}`,
+        id: 'p-retain-cycle-arc-explain',
+        content: 'Swift uses **Automatic Reference Counting (ARC)** to track and manage app memory. Every class instance maintains an internal count of active strong references pointing to it. When an instance’s reference count hits zero, it is immediately deallocated from memory.',
       },
       {
         type: 'paragraph',
-        id: 'p-breaking-desc-2',
-        content: "Now: the closure doesn't keep `APIClient` alive. If no other part of the code holds a reference to it, the client can be deallocated. And when it is, the `[weak self]` reference becomes `nil`, which is why we use `guard let self` to safely unwrap it.",
+        id: 'p-retain-cycle-how',
+        content: 'A **retain cycle (strong reference cycle)** occurs when two class instances, or an instance and an escaping closure, hold strong references to each other. Because neither reference count can ever reach zero, the memory is leaked permanently for the lifetime of the process.',
       },
       {
         type: 'code',
-        id: 'code-capture',
+        id: 'code-retain-cycle-leak',
         language: 'swift',
-        content: `class ViewController: UIViewController {
-    var name = "Alice"
+        caption: 'Classic retain cycle between an object and its closure property',
+        content: `class ProfileViewModel {
+    var username: String = "Alex"
+    var onProfileLoaded: (() -> Void)?
 
-    // ✗ Retain cycle — closure captures self strongly
-    func badExample() {
-        someAsync { [self] in
-            print(self.name)  // Cycle: self → closure → self
+    func setupHandler() {
+        // ✗ RETAIN CYCLE:
+        // 1. 'self' owns 'onProfileLoaded' strongly via stored property.
+        // 2. 'onProfileLoaded' closure strongly captures 'self' to access 'self.username'.
+        // Cycle: self ──(strong)──> closure ──(strong)──> self
+        self.onProfileLoaded = {
+            print("Profile loaded for: \\(self.username)")
         }
     }
 
-    // ✓ Weak capture — no retain cycle
-    func goodExample() {
-        someAsync { [weak self] in
+    deinit {
+        print("ProfileViewModel deallocated") // Will NEVER be executed!
+    }
+}`,
+      },
+      {
+        type: 'heading',
+        id: 'h-strong-weak-dance',
+        level: 2,
+        content: 'Breaking Retain Cycles: [weak self] & Scope Atomicity',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-weak-self-concept',
+        content: 'To break the cycle, add `[weak self]` to the closure’s capture list. A `weak` reference does **not** increment the ARC retain count. If all other strong references to the object are released, ARC deallocates the instance and automatically sets the weak reference to `nil`. Consequently, a weak capture is always an Optional (`Self?`).',
+      },
+      {
+        type: 'code',
+        id: 'code-weak-self-dance',
+        language: 'swift',
+        caption: 'The Strong-Weak Dance pattern (Swift 5.7+)',
+        content: `class ProfileViewModel {
+    var username: String = "Alex"
+    var onProfileLoaded: (() -> Void)?
+
+    func setupHandler() {
+        // ✓ BREAKING THE CYCLE:
+        // [weak self] does not increment the retain count of ProfileViewModel
+        self.onProfileLoaded = { [weak self] in
+            // Swift 5.7+ shorthand unwrap: creates a temporary strong reference
             guard let self else { return }
-            print(self.name)
+            
+            self.refreshUI()
+            self.syncAnalytics()
+        }
+    }
+
+    func refreshUI() { print("Refreshed:", username) }
+    func syncAnalytics() { print("Synced analytics") }
+
+    deinit {
+        print("ProfileViewModel deallocated safely") // Successfully prints!
+    }
+}`,
+      },
+      {
+        type: 'callout',
+        id: 'callout-scope-atomicity',
+        variant: 'interview',
+        title: 'Why the Strong-Weak Dance Matters: Scope Atomicity',
+        content: `A common junior habit is writing \`self?.refreshUI(); self?.syncAnalytics()\` with optional chaining instead of unwrapping with \`guard let self\`.
+
+**Why is \`guard let self\` superior?**
+If you rely solely on \`self?.\`, \`self\` could be deallocated on another thread *between* \`self?.refreshUI()\` and \`self?.syncAnalytics()\`, leading to inconsistent, half-completed state. 
+
+By rebinding \`guard let self else { return }\`, you establish a **temporary strong reference** for the execution of that specific closure scope. If \`self\` is alive when entering the block, it is guaranteed to remain alive until the block completes, ensuring atomic execution. Once the closure finishes, the local reference goes out of scope and ARC deallocates the object if no other references remain.`,
+      },
+      {
+        type: 'heading',
+        id: 'h-unowned-vs-weak',
+        level: 2,
+        content: '[unowned self] vs [weak self]',
+      },
+      {
+        type: 'paragraph',
+        id: 'p-unowned-explain',
+        content: 'Swift also provides `[unowned self]`. Like `weak`, an `unowned` capture does not increment the ARC retain count. However, an unowned capture is **non-optional**; you do not unwrap it before use.',
+      },
+      {
+        type: 'list',
+        id: 'l-unowned-vs-weak-rules',
+        ordered: false,
+        items: [
+          '**`[weak self]`:** The reference becomes `nil` when the object deallocates. Always optional (`Self?`). Extremely safe: if the object dies unexpectedly, your code simply handles the `nil` branch.',
+          '**`[unowned self]`:** The reference is assumed to **never** become `nil` while the closure is alive. If the object is deallocated and the closure subsequently executes and accesses `self`, the application crashes immediately with a runtime trap (`EXC_BAD_INSTRUCTION`).',
+        ],
+      },
+      {
+        type: 'code',
+        id: 'code-unowned-example',
+        language: 'swift',
+        caption: 'Valid use case for [unowned self] vs catastrophic crash',
+        content: `// VALID USE OF UNOWNED:
+// A CreditCard cannot exist without a Customer; their lifecycles are identical.
+class CreditCard {
+    let number: String
+    unowned let customer: Customer // Valid unowned property
+
+    init(number: String, customer: Customer) {
+        self.number = number
+        self.customer = customer
+    }
+}
+
+// ✗ DANGEROUS USE OF UNOWNED IN ASYNC CODE:
+class FeedViewController: UIViewController {
+    func loadData(network: NetworkService) {
+        network.fetchFeed { [unowned self] items in
+            // CRASH: If user tapped "Back" while network request was in flight,
+            // FeedViewController was deallocated. Accessing 'self' crashes!
+            self.tableView.reloadData()
         }
     }
 }`,
       },
       {
-        type: 'paragraph',
-        id: 'p-weak-vs-unowned-title',
-        content: '**`[weak self]` vs `[unowned self]`**',
+        type: 'callout',
+        id: 'callout-unowned-rule',
+        variant: 'warning',
+        title: 'Production Rule of Thumb',
+        content: 'Never use `[unowned self]` in asynchronous operations (network requests, async queues, timers, notifications, or animations). Use `[weak self]` by default. Reserve `[unowned self]` only for scenarios where child objects have an invariant, strictly identical lifecycle to the parent.',
+      },
+      {
+        type: 'heading',
+        id: 'h-unnecessary-captures',
+        level: 2,
+        content: 'When Capture Lists Are NOT Needed',
       },
       {
         type: 'paragraph',
-        id: 'p-weak-vs-unowned-desc',
-        content: 'Both break retain cycles, but with different guarantees:',
+        id: 'p-unnecessary-intro',
+        content: 'Overusing `[weak self]` everywhere is a common anti-pattern in iOS engineering. Adding `[weak self]` introduces optional unwrapping boilerplate and potential early-exit bugs where work is silently skipped. In the following cases, `[weak self]` is unnecessary:',
       },
       {
         type: 'list',
-        id: 'l-weak-vs-unowned',
+        id: 'l-unnecessary-scenarios',
         ordered: false,
         items: [
-          '**`[weak self]`:** The reference can become `nil` if the object is deallocated. You must unwrap it with `guard let` or `if let` before using it. Use this in most cases. It\'s safe — if the object goes away, you gracefully handle the `nil` case.',
-          '**`[unowned self]`:** You\'re asserting to the compiler that the object will always exist as long as the closure exists. If that assumption is wrong, the closure will try to access a deallocated object and crash. Use this only when you can *prove* the closure will never outlive the captured object (rare; mostly in architectures with strict ownership guarantees).',
+          '**Non-Escaping Closures:** Standard library functions like `map`, `filter`, `forEach`, and `compactMap` execute synchronously on the current stack frame. Retain cycles cannot form.',
+          '**Value Types (Structs and Enums):** Structs and enums are copied on assignment and have no ARC reference counts. Applying `[weak self]` inside a mutating struct method is a compile-time error (`"weak" cannot be applied to non-class type`).',
+          '**System Animations (UIView.animate):** The animation block is retained by the system animation server and released upon completion. Unless `self` also stores the animation block in a property, no cycle exists.',
+          '**One-Off Operations Without Storage:** Operations like `DispatchQueue.main.asyncAfter` or `URLSession.dataTask` keep `self` alive only until the closure finishes running. This is often intentional (e.g. ensuring data saving finishes even if screen closes). Use `[weak self]` only if you want the task to abort when the view controller dismisses.',
         ],
       },
       {
-        type: 'paragraph',
-        id: 'p-simple-rule',
-        content: "**Simple rule:** Use `[weak self]` by default. Only use `[unowned self]` if you've explicitly proven the object lifetime and documented why it's safe.",
+        type: 'heading',
+        id: 'h-capture-matrix',
+        level: 2,
+        content: 'Capture Strategies Comparison Matrix',
       },
       {
-        type: 'code',
-        id: 'code-async-pattern',
-        language: 'swift',
-        caption: "The pattern you'll use 99% of the time",
-        content: `someAsyncOperation { [weak self] result in
-    guard let self else { return }
-    self.updateUI(with: result)
-}`,
+        type: 'table',
+        id: 'table-capture-matrix',
+        caption: 'Comparison of Swift closure capture strategies and their memory characteristics',
+        headers: ['Capture Strategy', 'Syntax', 'Type Inside Closure', 'ARC Retain Count', 'Memory Safety', 'Primary Use Case'],
+        rows: [
+          {
+            cells: ['Default (Reference)', '{ score }', 'Shared live reference', 'Increments (+1 for classes)', 'Risk of retain cycle if stored', 'Local helpers, synchronous loops'],
+          },
+          {
+            cells: ['Value Snapshot', '{ [score] in }', 'Immutable constant (let)', 'Zero ARC impact (value copy)', '100% memory safe', 'Freezing state at creation moment'],
+          },
+          {
+            cells: ['Weak Reference', '{ [weak self] in }', 'Optional (Self?)', 'No increment (0 ARC)', 'Safe (becomes nil on dealloc)', 'Escaping async callbacks, network, timers'],
+          },
+          {
+            cells: ['Unowned Reference', '{ [unowned self] in }', 'Non-optional (Self)', 'No increment (0 ARC)', 'Crashes if accessed after dealloc', 'Guaranteed identical child-parent lifetime'],
+          },
+          {
+            cells: ['Named Expression', '{ [id = self.id] in }', 'Immutable constant (let)', 'Zero ARC on parent object', 'Safe (bypasses parent capture)', 'Extracting isolated values without self'],
+          },
+        ],
       },
       {
         type: 'callout',
         id: 'c-autoclosure',
         variant: 'info',
         title: 'Note: @autoclosure',
-        content: `Sometimes you see functions marked with \`@autoclosure\`. This is a shorthand syntax that lets you pass a closure without the \`{ }\` braces:
+        content: `Swift also provides the \`@autoclosure\` attribute. It automatically wraps an expression passed as an argument into an unevaluated closure:
 
 \`\`\`swift
 func logIfDebug(_ message: @autoclosure () -> String) {
     #if DEBUG
-    print(message())
+    print(message()) // Evaluated only if DEBUG is active
     #endif
 }
 
-logIfDebug("expensive computation")  // No braces needed
-// Without @autoclosure, you'd write: logIfDebug { "expensive computation" }
+logIfDebug("Calculated score: \\(expensiveScoreCalculation())")
 \`\`\`
 
-\`@autoclosure\` is mostly used in standard library functions (like \`&&\` and \`||\` operators) to make them feel like language features rather than function calls. You rarely need to write it yourself. Just know it exists if you encounter it.`,
+Standard library operators like \`&&\` and \`||\` use \`@autoclosure\` for short-circuit evaluation: the right-hand expression is never evaluated if the left-hand condition already determines the outcome.`,
       },
       {
         type: 'interview',
         id: 'interview',
         relevance: 'high',
         questions: [
-          'What is the difference between escaping and non-escaping closures?',
-          'How does [weak self] prevent retain cycles?',
-          'When would you use [unowned self] instead of [weak self]?',
-          'What does @autoclosure do?',
+          'What is the fundamental difference between default variable capture and using a capture list [x] in Swift?',
+          'Why does [weak self] make self an Optional, whereas [unowned self] leaves it non-optional?',
+          'What is the "strong-weak dance" (guard let self else { return }) and what is scope atomicity?',
+          'How can you use capture list initializers ([id = self.id]) to eliminate the need for [weak self] entirely?',
+          'Can you use [weak self] inside a mutating method of a Swift struct? Explain why or why not.',
+          'Do standard collection methods like array.map or array.filter require [weak self]? Why?',
+          'What is the difference between an escaping closure (@escaping) and a non-escaping closure in terms of memory allocation?',
         ],
       },
-      { type: 'relatedTopics', id: 'related', topicIds: ['memory-retain-cycles', 'swift-protocols'] },
+      { type: 'relatedTopics', id: 'related', topicIds: ['memory-retain-cycles', 'memory-arc', 'swift-struct-vs-class'] },
     ],
   },
 
