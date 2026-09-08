@@ -17,11 +17,19 @@ export function subscribeBookmarks(listener: Listener): () => void {
   };
 }
 
-const emptySubscribe = () => () => {};
+let isClientMounted = false;
+const subscribeMounted = (onStoreChange: () => void) => {
+  if (!isClientMounted) {
+    isClientMounted = true;
+    queueMicrotask(onStoreChange);
+  }
+  return () => {};
+};
+
 export function useMounted(): boolean {
   return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
+    subscribeMounted,
+    () => isClientMounted,
     () => false
   );
 }
