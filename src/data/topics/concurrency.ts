@@ -16,7 +16,7 @@ export const concurrencyTopics: ArticleTopic[] = [
     interviewRelevance: 'high',
     tags: ['actors', 'concurrency', 'isolation', 'sendable', 'data-races'],
     relatedTopics: ['concurrency-mainactor', 'concurrency-async-await', 'concurrency-sendable', 'concurrency-task'],
-    previousTopic: 'concurrency-async-await',
+    previousTopic: 'concurrency-task-groups',
     nextTopic: 'concurrency-mainactor',
     content: [
       {
@@ -256,7 +256,6 @@ enum ImageCacheError: Error {
       },
     ],
     relatedTopics: ['concurrency-actors', 'concurrency-task', 'concurrency-task-groups'],
-    previousTopic: 'concurrency-actors',
     nextTopic: 'concurrency-task',
     content: [
       {
@@ -978,7 +977,6 @@ class ProfileViewModel: ObservableObject {
     tags: ['sendable', 'concurrency', 'data-races', 'swift6'],
     relatedTopics: ['concurrency-actors', 'concurrency-mainactor', 'concurrency-task'],
     previousTopic: 'concurrency-mainactor',
-    nextTopic: 'concurrency-task-groups',
     content: [
       {
         type: 'quickAnswer',
